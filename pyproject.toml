@@ -5,7 +5,7 @@ description = "Data-driven visual generator: JSON + template + art + text sectio
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "merlin-pinpin-org" }]
+authors = [{ name = "jj-guild" }]
 dependencies = ["pillow>=10.0.0", "matplotlib>=3.7.0"]
 
 [project.scripts]

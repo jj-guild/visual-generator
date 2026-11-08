@@ -5,7 +5,7 @@ description: Render game visuals (TCG cards, match announcements, galleries, ann
 
 # Visual generation (visual-generator)
 
-**Repository**: https://github.com/merlin-pinpin-org/visual-generator
+**Repository**: https://github.com/jj-guild/visual-generator
 
 The repo is the source of truth: engine, templates, JSON data schemas,
 examples, this skill and its companion instructions (`AGENTS.md`).
