@@ -1,0 +1,31 @@
+{
+  "template": "entity_card",
+  "output": "examples/entity_territory.jpg",
+  "art": "examples/assets/card_art_ambush.jpg",
+  "backdrop": "examples/assets/battle.jpg",
+  "badge": "r3",
+  "sections": {
+    "title": "Northern Keep",
+    "type_line": "Defensive territory",
+    "plates": [
+      {
+        "head": "Territory bonus",
+        "lines": [
+          "Buildings +10/20/30/40 % HP per cycle",
+          "Walls repair overnight at no cost"
+        ]
+      },
+      {
+        "head": "Unique unit",
+        "lines": [
+          "Shieldbearer — trained from the barracks",
+          "Grants cover to adjacent allies"
+        ]
+      }
+    ],
+    "extra_label": "Grants civilization",
+    "extra_value": "Wolves",
+    "footer_left": "demo:territory:northern-keep",
+    "footer_right": "Demo Game"
+  }
+}

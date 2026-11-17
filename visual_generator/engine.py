@@ -18,8 +18,8 @@ or missing fonts abort with a non-zero exit and an explicit message.
 
 Usage::
 
-    python engine/render.py --data data/visual.json
-    python engine/render.py --data data/visual.json --out out.jpg
+    vg-render --data data/visual.json
+    from visual_generator import render_file; render_file("data/visual.json")
 """
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ try:
 except ImportError:
     sys.exit("Pillow is required: pip install pillow")
 
-TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates")
+TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
 
 
 def load_fonts(font_dir: str | None = None) -> dict:
@@ -112,6 +112,12 @@ def render_visual(data: dict, font_dir: str | None = None, out: str | None = Non
     return dest
 
 
+def render_file(path: str, font_dir: str | None = None, out: str | None = None) -> str:
+    """Render the JSON visual definition at ``path``; returns the output path."""
+    with open(path, encoding="utf-8") as fh:
+        return render_visual(json.load(fh), font_dir, out)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render a JSON visual with a template")
     parser.add_argument("--data", required=True, help="JSON visual definition")
@@ -119,10 +125,7 @@ def main() -> None:
     parser.add_argument("--font-dir", default=None, help="DejaVu Serif directory (auto-detected)")
     args = parser.parse_args()
 
-    with open(args.data, encoding="utf-8") as fh:
-        data = json.load(fh)
-
-    render_visual(data, args.font_dir, args.out)
+    render_file(args.data, args.font_dir, args.out)
 
 
 if __name__ == "__main__":

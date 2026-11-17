@@ -37,8 +37,10 @@ uv sync
 uv run vg-render --data docs/visuals/data/<name>.json
 ```
 
-Dependencies (installed automatically): `pillow`, `matplotlib` (font
-bundle). Fonts auto-locate DejaVu Serif; `--font-dir` overrides.
+Runtime dependency: `pillow` only. Fonts auto-locate DejaVu Serif
+(system `fonts-dejavu`, or the matplotlib bundle via the optional
+`fonts` extra: `pip install "visual-generator[fonts]"`);
+`--font-dir` overrides.
 
 ## Pipeline (per visual)
 
@@ -56,9 +58,9 @@ bundle). Fonts auto-locate DejaVu Serif; `--font-dir` overrides.
 3. **Download the art immediately** — generated URLs expire (~1 h).
    Never share an expired link or a sandbox path with the user:
    deliver through committed files (raw GitHub URLs).
-4. **Render** — `vg-render --data <name>.json` (or `python engine/
-   render.py --data …` from a repo checkout). The `template` key
-   selects the layout module.
+4. **Render** — `vg-render --data <name>.json` (or `python -m
+   visual_generator.engine --data …` from a repo checkout). The
+   `template` key selects the layout module.
 5. **Validate — mandatory.** `vg-ocr-check --data <name>.json`
    (fail-closed: non-zero exit if any expected string is missing from
    the OCR transcript; requires tesseract + `fra`). In sandboxes

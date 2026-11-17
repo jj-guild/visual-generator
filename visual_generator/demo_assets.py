@@ -4,9 +4,12 @@
 All art is procedural (Pillow only): no text, no letters — the image
 model never renders text, and neither does this script. Each asset is
 a stand-in for a real game asset or an image-model illustration.
+Assets are written to ``examples/assets/`` relative to the current
+directory; ``--out`` retargets them.
 """
 from __future__ import annotations
 
+import argparse
 import os
 import random
 
@@ -126,20 +129,24 @@ def card_art(path, seed, w=800, h=640):
 
 
 def main() -> None:
-    os.makedirs(OUT, exist_ok=True)
-    parchment(f"{OUT}/parchment.jpg")
-    crest(f"{OUT}/crest_lion.png", 11)
-    crest(f"{OUT}/crest_stag.png", 29)
-    icon(f"{OUT}/civ_red.png", 3)
-    icon(f"{OUT}/civ_blue.png", 5)
-    icon(f"{OUT}/civ_green.png", 8)
-    scene(f"{OUT}/battle.jpg", 13)
-    card_art(f"{OUT}/card_art_ambush.jpg", 17)
+    global OUT
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--out", default=OUT, help="output directory for the demo assets")
+    out = p.parse_args().out
+    os.makedirs(out, exist_ok=True)
+    parchment(f"{out}/parchment.jpg")
+    crest(f"{out}/crest_lion.png", 11)
+    crest(f"{out}/crest_stag.png", 29)
+    icon(f"{out}/civ_red.png", 3)
+    icon(f"{out}/civ_blue.png", 5)
+    icon(f"{out}/civ_green.png", 8)
+    scene(f"{out}/battle.jpg", 13)
+    card_art(f"{out}/card_art_ambush.jpg", 17)
     for i, name in enumerate(["northern-pass", "twin-lakes", "black-forest",
                               "golden-coast", "iron-hills", "sun-valley",
                               "mist-marsh", "old-crossroad"], start=21):
-        territory(f"{OUT}/terr_{name}.jpg", i)
-    print("demo assets written to", OUT)
+        territory(f"{out}/terr_{name}.jpg", i)
+    print("demo assets written to", out)
 
 
 if __name__ == "__main__":

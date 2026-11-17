@@ -17,7 +17,8 @@ belong in the JSON data files of the consuming project, never here.
    by the engine from the JSON with a real vector font. This is the
    only way to guarantee correct text, and it is what makes every
    output OCR-verifiable.
-2. **Every rendered output must pass `tools/ocr_check.py`** before it
+2. **Every rendered output must pass the OCR check** (`visual_generator/ocr.py`,
+   CLI `vg-ocr-check`) before it
    is committed or delivered. The check is fail-closed.
 3. **Data is the source of truth.** To change a visual, edit the JSON
    and re-render. Never edit a rendered image.
@@ -37,28 +38,31 @@ belong in the JSON data files of the consuming project, never here.
    via generated links or sandbox paths.
 8. **No game-specific content.** Names, brands, crests and lore of a
    concrete game live in that game's repository. This repo ships
-   neutral examples only (`tools/make_demo_assets.py` generates the
+   neutral examples only (`visual_generator/demo_assets.py` generates the
    demo art procedurally, without any image model).
 
 ## Workflow
 
 1. Write/extend the JSON in `data/` (schema in the template docstring).
-2. Render: `python engine/render.py --data data/<name>.json`.
-3. Validate: `python tools/ocr_check.py --data data/<name>.json`, plus
-   a visual check for layout defects.
+2. Render: `vg-render --data data/<name>.json`
+   (from a repo checkout: `python -m visual_generator.engine --data …`).
+3. Validate: `vg-ocr-check --data data/<name>.json`
+   (or `python -m visual_generator.ocr --data …`), plus a visual
+   check for layout defects.
 4. Commit JSON + art + rendered output together, with a message
    naming the template.
 
 ## Adding a template
 
-- One module per visual kind in `templates/`, exposing
-  `render(data, fonts)` and `DEFAULT_PALETTE` (palette keys documented,
-  hex overrides allowed from the JSON `palette` key).
+- One module per visual kind in `visual_generator/templates/`,
+  exposing `render(data, fonts)` and `DEFAULT_PALETTE` (palette keys
+  documented, hex overrides allowed from the JSON `palette` key).
 - Document the JSON schema in the module docstring, with a working
   example.
-- `engine/render.py` injects `resolve_palette` into the template
-  module — templates never import the engine.
-- Ship a `data/` example and validate its rendering by OCR.
+- `visual_generator/engine.py` injects `resolve_palette` into the
+  template module — templates never import the engine.
+- Ship a `data/` example, add it to the test suite, and validate its
+  rendering by OCR.
 - Keep assets small: example images ≤ ~300 KB, meaningful names.
 
 ## Style

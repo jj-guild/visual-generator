@@ -17,17 +17,17 @@ JSON schema::
       "palette": {"gold": "#5c8a4e", "band": "#22301e"},  # kind colors
       "art": "path/to/entity_art.jpg",                  # the art window
       "backdrop": "path/to/scene.jpg",                  # optional: diffuse background
-      "badge": "aoe2",                                  # round badge, optional
+      "badge": "r3",                                   # round badge, optional
       "sections": {
-        "title": "Byzantins",
-        "type_line": "Civilisation défensive",
+        "title": "Northern Keep",
+        "type_line": "Defensive territory",
         "plates": [
-          {"head": "Bonus de civilisation",
-           "lines": ["Bâtiments +10/20/30/40 % de PV", "..."]}
+          {"head": "Territory bonus",
+           "lines": ["Buildings +10/20/30/40 % HP", "..."]}
         ],
-        "extra_label": "Unité unique",                  # optional linked box
-        "extra_value": "Cataphractaire",
-        "footer_left": "faction:aoe2:Byzantines",
+        "extra_label": "Unique unit",                  # optional linked box
+        "extra_value": "Shieldbearer",
+        "footer_left": "demo:territory:northern-keep",
         "footer_right": "Demo Game"
       }
     }
