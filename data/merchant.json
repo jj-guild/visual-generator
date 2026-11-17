@@ -1,0 +1,29 @@
+{
+  "template": "merchant",
+  "output": "examples/merchant.jpg",
+  "sections": {
+    "title": "THE MERCHANT — WEEK 3",
+    "columns": 3,
+    "products": [
+      {
+        "art": "examples/assets/parchment.jpg",
+        "name": "Old Map",
+        "description": "Reveals one unexplored territory.",
+        "price": "120 gears"
+      },
+      {
+        "art": "examples/assets/terr_iron-hills.jpg",
+        "name": "Iron Tools",
+        "description": "Grants +1 gear point each cycle.",
+        "price": "80 gears"
+      },
+      {
+        "art": "examples/assets/card_art_ambush.jpg",
+        "name": "Ambush Plans",
+        "description": "Unlocks the Ambush special action.",
+        "price": "200 gears"
+      }
+    ],
+    "footer": "Demo Game — one purchase per player per week"
+  }
+}

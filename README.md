@@ -1,8 +1,8 @@
 # visual-generator
 
 A generic, data-driven visual generator: **JSON + template + art + text
-sections**. Any visual — TCG card, match announcement, gallery,
-annotated world map, parchment rules poster — is defined by:
+sections**. Any visual — match announcement, annotated world map,
+merchant shop, entity card, kingdom sheet — is defined by:
 
 - a **JSON data file** — the content (names, texts, numbers, image paths);
 - a **template** — a Python layout module;
@@ -42,16 +42,16 @@ A visual is one JSON file. The `template` key selects the layout;
   "output": "out/match.jpg",
   "art": "assets/battle.jpg",
   "sections": {
-    "left_name": "Lion House",
-    "left_crest": "assets/crest_lion.png",
-    "right_name": "Stag House",
-    "right_crest": "assets/crest_stag.png",
+    "left_name": "Aldric",
+    "left_avatar": "assets/avatar_aldric.png",
+    "right_name": "Brunhild",
+    "right_avatar": "assets/avatar_brunhild.png",
     "map_art": "assets/terr_golden-coast.jpg",
     "map_name": "Golden Coast",
     "vs": "VS",
-    "context_line": "Season attack — Cycle 3",
-    "sub_line": "Sunday 23:30 · Season II",
-    "footer": "Demo Game"
+    "context_line": "Winter Tournament — Round 2",
+    "sub_line": "Settings: Hard · 2v2",
+    "footer": "Sunday 23:30 · Season II"
   }
 }
 ```
@@ -87,9 +87,27 @@ bump (SemVer).
 | `collect_strings` | `(obj) -> list[str]` | Every string the JSON contributes to the visual's text |
 | `load_fonts` | `(font_dir: str \| None = None) -> dict` | DejaVu Serif font paths (`b`/`r`/`i`), used by templates |
 | `list_templates` | `() -> list[str]` | Available template names |
+| `template_structure` | `(name: str) -> dict` | Declared structure of a template: canvas + zones |
 
 CLIs (same fail-closed contract): `vg-render`, `vg-ocr-check`,
 `vg-demo-assets` (regenerates the neutral demo art procedurally).
+
+## Targets and declared structure
+
+Every shipped template targets **Discord embeds**: the default canvas
+is **under 600 px wide** so the image displays inline in an embed.
+Each template declares its structure — the canvas and the named zones
+(image or text) where the consumer integrates its data. The consumer
+fills the zones with the right data; the template owns the geometry.
+
+```python
+from visual_generator import template_structure
+
+template_structure("match_announcement")
+# {"canvas": {"width": 576, "height": 324}, "target": "discord-embed",
+#  "zones": {"left_avatar": {"kind": "image", "rect": [...], "note": ...},
+#            "left_name": {"kind": "text", ...}, ...}}
+```
 
 ## The one hard rule
 
@@ -107,31 +125,68 @@ art). `sections` is the template's content, schemas below — this is
 the contract consuming projects write into their JSON. Art paths are
 relative to the working directory of the render call.
 
-### `card_tcg` — TCG card
+### `match_announcement` — two players, one place, the context
 
-![TCG card — Ambush](examples/card_ambush.jpg)
+![Match announcement — Aldric vs Brunhild](examples/match_announcement.jpg)
 
-Fixed anatomy (name banner / art window / type line / rule box /
-extra box / footer as fixed canvas fractions — the art never shifts
-text zones). `cost`: int = N gear icons, string = round text badge.
+576×324. Round avatar medallions with pseudos, battle map medallion
+in the center, VS badge, bottom band for the context (tournament /
+settings / time). Pseudos ≈ 14 characters max per side.
+
+```json
+{ "art": "assets/battle.jpg", "sections": {
+    "left_name": "Aldric", "left_avatar": "assets/avatar_aldric.png",
+    "right_name": "Brunhild", "right_avatar": "assets/avatar_brunhild.png",
+    "map_art": "assets/terr_golden-coast.jpg", "map_name": "Golden Coast",
+    "vs": "VS", "context_line": "Winter Tournament — Round 2",
+    "sub_line": "Settings: Hard · 2v2", "footer": "Sunday 23:30 · Season II" } }
+```
+
+### `world_map` — annotated map with crest spots
+
+![World map — regions pinned at geographic positions](examples/world_map_regions.jpg)
+
+576×432. Real map art background, one spot per territory at its
+geographic position: a colored pin, or a **crest spot** (round
+medallion carrying the region's crest/icon — `icon` key). `x`/`y`
+are pixel coordinates on the canvas (title band: top 48 px, footer
+band: bottom 28 px). **Place regions on actual land** — inspect the
+map art first; pins in the ocean are a defect.
+
+```json
+{ "art": "assets/world_map_art.jpg", "sections": {
+    "title": "THE WORLD — WEEK 3", "footer": "Demo Game — Season II",
+    "regions": [ { "name": "Black Forest", "x": 245, "y": 98,
+                   "color": "#5c8a4e", "note": "Elks · Lion",
+                   "icon": "assets/crest_lion.png" } ] } }
+```
+
+### `merchant` — product sheets side by side
+
+![Merchant — week 3 shop](examples/merchant.jpg)
+
+576×384. Titled row of product cards: art window, name, short
+description, price on a gold band. `columns` defaults to 3 (max 4);
+extra products wrap. Keep descriptions short (≈ 2 lines per card).
 
 ```json
 { "sections": {
-    "name": "Ambush", "cost": 2,
-    "art": "assets/card_art.jpg",
-    "type_line": "Special action — Technology",
-    "rule": "One extra attack this cycle.\nSecond paragraph.",
-    "extra_label": "Linked condition:", "extra_value": "Wolves",
-    "footer_left": "1/10", "footer_right": "Demo Game" } }
+    "title": "THE MERCHANT — WEEK 3", "columns": 3,
+    "products": [ { "art": "assets/parchment.jpg", "name": "Old Map",
+                    "description": "Reveals one unexplored territory.",
+                    "price": "120 gears" } ],
+    "footer": "Demo Game — one purchase per player per week" } }
 ```
 
 ### `entity_card` — one entity's sheet
 
 ![Entity card — Northern Keep](examples/entity_territory.jpg)
 
-Collector-card anatomy: name banner + badge, art window over a
-translucent backdrop, parchment plates (heads + lines), optional
-linked-value box. The civilization / map / player card case.
+576×800 (scales with `canvas`). Collector-card anatomy: name banner +
+badge, art window over a translucent backdrop, parchment plates
+(heads + lines), optional linked-value box. The territory /
+civilization / player card case — any entity with a visual and a
+description.
 
 ```json
 { "art": "assets/entity_art.jpg", "backdrop": "assets/scene.jpg", "badge": "r3",
@@ -143,84 +198,21 @@ linked-value box. The civilization / map / player card case.
     "footer_left": "demo:territory:northern-keep", "footer_right": "Demo Game" } }
 ```
 
-### `match_announcement` — X-vs-Y banner
+### `kingdom` — a realm's owned territories
 
-![Match announcement — Lion House vs Stag House](examples/match_lion_vs_stag.jpg)
+![Kingdom — The Rivermark](examples/kingdom.jpg)
 
-Discord-sized (1200×675): large crests centered per side, names below,
-attacker's civ icons (max 3) under the name, battle-map medallion in
-the center, VS badge, context band. Dim battle backdrop via the
-top-level `art` key.
-
-```json
-{ "art": "assets/battle.jpg", "sections": {
-    "left_name": "Lion House", "left_crest": "assets/crest_lion.png",
-    "left_civs": ["assets/civ_red.png", "assets/civ_green.png"],
-    "right_name": "Stag House", "right_crest": "assets/crest_stag.png",
-    "map_art": "assets/terr_golden-coast.jpg", "map_name": "Golden Coast",
-    "vs": "VS", "context_line": "Season attack — Cycle 3",
-    "sub_line": "Sunday 23:30 · Season II", "footer": "Demo Game" } }
-```
-
-### `gallery` — titled grid of art + captions
-
-![Gallery — territories](examples/gallery_territories.jpg)
+576×324. Castle scene as the background (`art`, veiled), kingdom
+name in the top band, the icon of every owned territory in a
+centered row (optional caption under each), bottom band for the
+ruler line. Up to 8 icons fit in the row.
 
 ```json
-{ "sections": {
-    "title": "DEMO GAME — Territories",
-    "item_width": 400, "item_height": 500, "columns": 4, "gap": 24,
-    "items": [ { "art": "assets/terr_twin-lakes.jpg",
-                 "caption": "Twin Lakes", "sub": "Grants the Otters civilization" } ] } }
-```
-
-### `world_map` — annotated map with geo-placed pins
-
-![World map — regions pinned at geographic positions](examples/world_map_regions.jpg)
-
-Real map art background, one label plate per territory, readable over
-busy art. `x`/`y` are pixel coordinates on the 1600×1200 canvas
-(title band: top 100 px). **Place regions on actual land** — inspect
-the map art first; pins in the ocean are a defect.
-
-```json
-{ "art": "assets/world_map_art.jpg", "sections": {
-    "title": "THE WORLD — WEEK 3", "footer": "Demo Game — Season II",
-    "regions": [ { "name": "Black Forest", "x": 680, "y": 240,
-                   "color": "#5c8a4e", "note": "Elks · Lion" } ] } }
-```
-
-### `parchment_poster` — rules poster on parchment
-
-![Parchment rules poster](examples/rules_poster.jpg)
-
-Parchment texture background (`art`), titled, auto-fitted
-multi-column rules text; fail-closed when the content cannot fit.
-
-```json
-{ "art": "assets/parchment.jpg", "sections": {
-    "title": "THE RULES OF THE GAME", "subtitle": "Demo Game — Season II",
-    "footer": "— As it is written, so shall it be played —",
-    "source_line": "Source : docs/rules", "columns": 2,
-    "sections": [ { "head": "Territories",
-                    "body": "Each territory is a map.\nSecond paragraph." } ] } }
-```
-
-### `contact_sheet` — N card visuals side by side
-
-![Contact sheet — technologies](examples/sheet_ambush.jpg)
-
-Re-renders each card (same data as the individual visuals) onto a
-titled dark sheet, aspect kept. Each entry of `cards` is a full
-visual definition (minus `template` and `output`) rendered by
-`card_template` at a reduced size.
-
-```json
-{ "sections": {
-    "title": "DEMO GAME — Technologies", "columns": 5,
-    "card_template": "card_tcg",
-    "cards": [ { "canvas": {"width": 744, "height": 1032},
-                 "sections": { "…card_tcg schema…": "…" } } ] } }
+{ "art": "assets/castle.jpg", "sections": {
+    "title": "The Rivermark",
+    "icons": [ { "art": "assets/terr_twin-lakes.jpg", "caption": "Twin Lakes" } ],
+    "subtitle": "Ruled by Aldric — 6 territories",
+    "footer": "Demo Game — Season II" } }
 ```
 
 Each template also documents its schema in its module docstring
@@ -247,8 +239,8 @@ everything needed to reproduce the reference rendering.
    shifts the text zones.
 4. **Every output must pass OCR** before delivery.
 5. **Assets are content, not decoration** — the JSON references the
-   real game assets (crests, map thumbnails, civilization icons); the
-   renderer places them, it never invents them.
+   real game assets (avatars, crests, map thumbnails); the renderer
+   places them, it never invents them.
 
 ## Versioning and publishing
 
@@ -268,7 +260,7 @@ owner.
 ```
 ├── AGENTS.md               ← agent instructions (rules, workflow)
 ├── .agents/skills/         ← agent skill (visual generation pipeline)
-├── visual_generator/      ← the pip-installable package
+├── visual_generator/       ← the pip-installable package
 │   ├── engine.py           ← core renderer (templates, palettes, fonts)
 │   ├── ocr.py              ← OCR validation (fail-closed, importable)
 │   ├── demo_assets.py      ← procedural demo art (no text, no model)

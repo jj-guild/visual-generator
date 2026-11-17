@@ -5,8 +5,8 @@ Instructions for AI coding agents working in this repository.
 ## What this repo is
 
 A data-driven visual generator: **JSON + template + art + text
-sections**. Any game can use it for TCG cards, match announcements,
-galleries, annotated world maps or parchment rules posters. The
+sections**. Any game can use it for match announcements, annotated
+world maps, merchant shops, entity cards or kingdom sheets. The
 long-term goal is a pip-installable library (see the `lib` issue) —
 keep the engine and templates project-agnostic; game specifics
 belong in the JSON data files of the consuming project, never here.
@@ -55,8 +55,12 @@ belong in the JSON data files of the consuming project, never here.
 ## Adding a template
 
 - One module per visual kind in `visual_generator/templates/`,
-  exposing `render(data, fonts)` and `DEFAULT_PALETTE` (palette keys
-  documented, hex overrides allowed from the JSON `palette` key).
+  exposing `render(data, fonts)`, `DEFAULT_PALETTE` (palette keys
+  documented, hex overrides allowed from the JSON `palette` key) and
+  a declared `STRUCTURE` — canvas dimensions (Discord embed target:
+  under 600 px wide) and the named image/text zones the consumer
+  fills. The structure is the layout contract; the consumer
+  integrates the data, the template owns the geometry.
 - Document the JSON schema in the module docstring, with a working
   example.
 - `visual_generator/engine.py` injects `resolve_palette` into the

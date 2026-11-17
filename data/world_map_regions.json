@@ -8,59 +8,50 @@
     "regions": [
       {
         "name": "Northern Pass",
-        "x": 300,
-        "y": 260,
+        "x": 108,
+        "y": 101,
         "color": "#7aa0c0",
-        "note": "Wolves · Lion"
+        "note": "Wolves · Lion",
+        "icon": "examples/assets/crest_lion.png"
       },
       {
         "name": "Twin Lakes",
-        "x": 520,
-        "y": 380,
+        "x": 187,
+        "y": 141,
         "color": "#5c8a4e",
-        "note": "Otters · Stag"
+        "note": "Otters · Stag",
+        "icon": "examples/assets/crest_stag.png"
       },
       {
         "name": "Black Forest",
-        "x": 680,
-        "y": 240,
+        "x": 245,
+        "y": 98,
         "color": "#5c8a4e",
-        "note": "Elks · Lion"
+        "note": "Elks · Lion",
+        "icon": "examples/assets/civ_red.png"
       },
       {
         "name": "Golden Coast",
-        "x": 285,
-        "y": 640,
+        "x": 103,
+        "y": 216,
         "color": "#3a7a5c",
-        "note": "Foxes · Stag"
+        "note": "Foxes · Stag",
+        "icon": "examples/assets/civ_green.png"
       },
       {
         "name": "Iron Hills",
-        "x": 1000,
-        "y": 200,
+        "x": 360,
+        "y": 81,
         "color": "#a08a5a",
-        "note": "Bears · Lion"
+        "note": "Bears · Lion",
+        "icon": "examples/assets/civ_blue.png"
       },
       {
         "name": "Sun Valley",
-        "x": 830,
-        "y": 700,
+        "x": 299,
+        "y": 236,
         "color": "#b08d4a",
         "note": "Hawks · Stag"
-      },
-      {
-        "name": "Mist Marsh",
-        "x": 400,
-        "y": 900,
-        "color": "#4a6a5c",
-        "note": "Boars · Lion"
-      },
-      {
-        "name": "Old Crossroad",
-        "x": 760,
-        "y": 1000,
-        "color": "#7a5a3a",
-        "note": "Ravens · Stag"
       }
     ]
   }

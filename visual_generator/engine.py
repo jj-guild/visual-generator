@@ -24,7 +24,6 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import os
 import sys
@@ -33,8 +32,6 @@ try:
     from PIL import Image, ImageDraw, ImageFont
 except ImportError:
     sys.exit("Pillow is required: pip install pillow")
-
-TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
 
 
 def load_fonts(font_dir: str | None = None) -> dict:
@@ -78,16 +75,9 @@ def resolve_palette(base: dict, overrides: dict | None) -> dict:
 
 
 def import_template(name: str):
-    """Load templates/<name>.py; fail-closed when absent or invalid."""
-    path = os.path.join(TEMPLATE_DIR, f"{name}.py")
-    if not os.path.isfile(path):
-        sys.exit(f"unknown template: {name!r} (expected {path})")
-    spec = importlib.util.spec_from_file_location(f"template_{name}", path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    if not hasattr(module, "render"):
-        sys.exit(f"template {name!r} has no render(data, fonts) function")
-    return module
+    """Load a template module; fail-closed when absent or invalid."""
+    from visual_generator.templates import import_template as _import
+    return _import(name)
 
 
 def render_visual(data: dict, font_dir: str | None = None, out: str | None = None) -> str:

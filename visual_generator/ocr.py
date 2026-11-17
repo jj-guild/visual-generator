@@ -30,7 +30,8 @@ import sys
 import unicodedata
 
 _SKIP_KEYS = ("art", "left_crest", "right_crest", "map_art",
-              "left_civs", "x", "y", "color")
+              "left_civs", "left_avatar", "right_avatar",
+              "icon", "x", "y", "color")
 
 
 def norm(s: str) -> str:

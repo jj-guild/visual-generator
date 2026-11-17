@@ -62,6 +62,48 @@ def crest(path, seed, w=1024, h=1024):
     img.save(path, optimize=True)
 
 
+def avatar(path, seed, w=256, h=256):
+    rng = random.Random(seed)
+    img = Image.new("RGB", (w, h), (52, 44, 34))
+    d = ImageDraw.Draw(img)
+    c = rng.choice([(168, 60, 48), (58, 88, 148), (64, 118, 66), (150, 112, 44)])
+    d.ellipse([0, 0, w - 1, h - 1], fill=c)
+    d.ellipse([w * 0.28, h * 0.18, w * 0.72, h * 0.62], fill=(226, 196, 158))
+    d.rectangle([w * 0.16, h * 0.60, w * 0.84, h * 0.95], fill=(70, 56, 40))
+    for _ in range(3):
+        x = rng.randint(int(w * 0.3), int(w * 0.6))
+        d.ellipse([x, int(h * 0.2), x + 12, int(h * 0.2) + 12], fill=(40, 30, 20))
+    img.save(path, quality=88)
+
+
+def castle(path, seed, w=1200, h=675):
+    rng = random.Random(seed)
+    sky = (120, 96, 64)
+    img = Image.new("RGB", (w, h), sky)
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, int(h * 0.45), w, h], fill=(70, 60, 44))
+    for i in range(5):
+        x = int(w * (i + 0.5) / 5) + rng.randint(-30, 30)
+        peak = rng.randint(int(h * 0.2), int(h * 0.4))
+        d.polygon([(x - rng.randint(80, 140), h), (x, h - peak),
+                   (x + rng.randint(80, 140), h)], fill=(58, 48, 36))
+    cx = w // 2
+    base = int(h * 0.78)
+    d.rectangle([cx - 160, base - 180, cx + 160, h], fill=(96, 82, 60))
+    for dx in (-220, 220):
+        d.rectangle([cx + dx - 52, base - 260, cx + dx + 52, h], fill=(88, 74, 54))
+        d.polygon([(cx + dx - 60, base - 260), (cx + dx, base - 330),
+                   (cx + dx + 60, base - 260)], fill=(140, 60, 44))
+    d.rectangle([cx - 90, base - 240, cx + 90, base - 60], fill=(88, 74, 54))
+    d.polygon([(cx - 100, base - 240), (cx, base - 320), (cx + 100, base - 240)],
+               fill=(140, 60, 44))
+    for _ in range(40):
+        x, y = rng.randrange(w), rng.randrange(int(h * 0.4))
+        d.point((x, y), fill=(235, 220, 180))
+    img = img.filter(ImageFilter.GaussianBlur(0.5))
+    img.save(path, quality=88)
+
+
 def icon(path, seed, w=104):
     rng = random.Random(seed)
     img = Image.new("RGBA", (w, w), (0, 0, 0, 0))
@@ -141,10 +183,12 @@ def main() -> None:
     icon(f"{out}/civ_blue.png", 5)
     icon(f"{out}/civ_green.png", 8)
     scene(f"{out}/battle.jpg", 13)
+    castle(f"{out}/castle.jpg", 31)
+    avatar(f"{out}/avatar_aldric.png", 41)
+    avatar(f"{out}/avatar_brunhild.png", 43)
     card_art(f"{out}/card_art_ambush.jpg", 17)
     for i, name in enumerate(["northern-pass", "twin-lakes", "black-forest",
-                              "golden-coast", "iron-hills", "sun-valley",
-                              "mist-marsh", "old-crossroad"], start=21):
+                              "golden-coast", "iron-hills", "sun-valley"], start=21):
         territory(f"{out}/terr_{name}.jpg", i)
     print("demo assets written to", out)
 

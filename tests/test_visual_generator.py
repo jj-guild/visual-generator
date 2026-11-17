@@ -27,6 +27,7 @@ from visual_generator import (  # noqa: E402
     load_fonts,
     render_file,
     render_visual,
+    template_structure,
 )
 
 EXAMPLES = sorted(
@@ -51,14 +52,27 @@ def test_public_api_surface():
 
 def test_list_templates():
     assert list_templates() == [
-        "card_tcg",
-        "contact_sheet",
         "entity_card",
-        "gallery",
+        "kingdom",
         "match_announcement",
-        "parchment_poster",
+        "merchant",
         "world_map",
     ]
+
+
+def test_template_structure_contract():
+    """Every template declares a canvas under 600 px wide (Discord
+    embed target) and zones inside the canvas."""
+    for name in list_templates():
+        st = template_structure(name)
+        w, h = st["canvas"]["width"], st["canvas"]["height"]
+        assert w < 600, name
+        assert st["target"] == "discord-embed", name
+        assert st["zones"], name
+        for zone, spec in st["zones"].items():
+            assert spec["kind"] in ("image", "text", "image+text"), (name, zone)
+            x0, y0, x1, y1 = spec["rect"]
+            assert 0 <= x0 < x1 <= w and 0 <= y0 < y1 <= h, (name, zone)
 
 
 def test_every_example_has_a_known_template():
@@ -87,7 +101,9 @@ def test_ocr_example(name, tmp_path):
 
 def test_collect_strings_skips_art_paths():
     data = {"name": "Ambush", "art": "examples/assets/battle.jpg",
-            "regions": [{"name": "Black Forest", "x": 1, "y": 2}]}
+            "left_avatar": "examples/assets/avatar.png",
+            "regions": [{"name": "Black Forest", "x": 1, "y": 2,
+                         "icon": "examples/assets/crest.png"}]}
     assert collect_strings(data) == ["Ambush", "Black Forest"]
 
 

@@ -5,18 +5,18 @@ The proven collector-card anatomy: outer frame, colored name banner
 with a badge, a large art window over a translucent backdrop, parchment
 plates for the content (light box, dark ink — the OCR-winning
 contrast), an optional linked-value box, and a dark footer. Built for
-the "one entity per post" visuals: civilization sheet, map sheet,
-player profile.
+the "one entity per post" visuals: territory sheet, civilization
+sheet, player profile — any entity with a visual and a description.
 
 JSON schema::
 
     {
       "template": "entity_card",
-      "output": "examples/entity_faction.jpg",
-      "canvas": {"width": 744, "height": 1032},        # optional (card ratio)
+      "output": "examples/entity_territory.jpg",
+      "canvas": {"width": 576, "height": 800},          # optional (default)
       "palette": {"gold": "#5c8a4e", "band": "#22301e"},  # kind colors
       "art": "path/to/entity_art.jpg",                  # the art window
-      "backdrop": "path/to/scene.jpg",                  # optional: diffuse background
+      "backdrop": "path/to/scene.jpg",                 # optional background
       "badge": "r3",                                   # round badge, optional
       "sections": {
         "title": "Northern Keep",
@@ -33,9 +33,8 @@ JSON schema::
     }
 
 The optional ``backdrop`` is a scene art stretched behind the whole
-card and lightly veiled (18% toward the band color), barely blurred: the
-scene stays readable — it is a backdrop, not a wash (v6: a too-
-diffuse backdrop is a flat fill).
+card and lightly veiled (18% toward the band color), barely blurred:
+the scene stays readable — it is a backdrop, not a wash.
 
 Anatomy (fractions of the canvas — never moved by the art):
 
@@ -45,6 +44,9 @@ Anatomy (fractions of the canvas — never moved by the art):
     0.58–0.86  parchment plate: section heads + lines
     0.86–0.94  linked-value box (banner color, when extra is set)
     0.94–1.00  footer
+
+All metrics scale with the ``canvas`` (default 576×800, Discord embed
+target).
 """
 
 from __future__ import annotations
@@ -66,7 +68,35 @@ F_TYPE = 0.58
 F_RULE = 0.86
 F_EXTRA = 0.94
 
-MARGIN_X = 56
+DEFAULT_W, DEFAULT_H = 576, 800
+REF_W = 744
+
+STRUCTURE = {
+    "canvas": {"width": DEFAULT_W, "height": DEFAULT_H},
+    "target": "discord-embed",
+    "zones": {
+        "backdrop": {"kind": "image", "rect": [0, 0, DEFAULT_W, DEFAULT_H],
+                     "note": "optional scene behind the whole card, veiled"},
+        "title": {"kind": "text", "rect": [26, 26, DEFAULT_W - 96, 80],
+                  "note": "entity name in the top banner"},
+        "badge": {"kind": "text", "rect": [DEFAULT_W - 106, 33, DEFAULT_W - 30, 73],
+                  "note": "round badge on the banner right (optional)"},
+        "art": {"kind": "image", "rect": [49, 84, 526, 440],
+                "note": "entity art window, center-cropped or fitted"},
+        "type_line": {"kind": "text", "rect": [0, 440, DEFAULT_W, 464],
+                      "note": "italic type line, centered"},
+        "plates": {"kind": "text", "rect": [43, 470, 533, 648],
+                   "note": "parchment plate: section heads + lines"},
+        "extra_label": {"kind": "text", "rect": [43, 660, 533, 690],
+                        "note": "linked-value box label (optional)"},
+        "extra_value": {"kind": "text", "rect": [43, 690, 533, 730],
+                        "note": "linked-value box value"},
+        "footer_left": {"kind": "text", "rect": [37, 760, 300, 785],
+                        "note": "footer, left-aligned"},
+        "footer_right": {"kind": "text", "rect": [276, 760, 539, 785],
+                         "note": "footer, right-aligned"},
+    },
+}
 
 
 def _wrap(draw, text, font, maxw):
@@ -109,13 +139,14 @@ def _crop(art, w, h, bg=(30, 38, 26)):
 def render(data, fonts):
     sec = data["sections"]
     pal = resolve_palette(DEFAULT_PALETTE, data.get("palette"))
-    cw = data.get("canvas", {}).get("width", 744)
-    ch = data.get("canvas", {}).get("height", 1032)
+    cw = data.get("canvas", {}).get("width", DEFAULT_W)
+    ch = data.get("canvas", {}).get("height", DEFAULT_H)
+    s = cw / REF_W  # all metrics scale with the canvas
     c = Image.new("RGBA", (cw, ch), pal["bg"] + (255,))
     backdrop = data.get("backdrop")
     if backdrop:
         bd = Image.open(backdrop).convert("RGB").resize((cw, ch))
-        bd = bd.filter(ImageFilter.GaussianBlur(2))
+        bd = bd.filter(ImageFilter.GaussianBlur(max(1, int(2 * s))))
         veil = Image.new("RGB", (cw, ch), pal["band"])
         c.paste(Image.blend(bd, veil, 0.18).convert("RGBA"), (0, 0))
     d = ImageDraw.Draw(c)
@@ -127,28 +158,30 @@ def render(data, fonts):
     extra_b = int(ch * F_EXTRA)
 
     # --- outer frame + name banner (the deck's double frame) ---
-    d.rectangle([0, 0, cw - 1, ch - 1], outline=pal["gold"], width=10)
-    d.rectangle([16, 16, cw - 17, ch - 17], outline=pal["gold2"], width=3)
-    d.rectangle([26, 26, cw - 27, name_b], fill=pal["band"], outline=pal["gold"], width=3)
-    nf = ImageFont.truetype(fonts["b"], 48 if len(sec["title"]) <= 12 else 40)
-    d.text((72, (26 + name_b) // 2), sec["title"], font=nf,
+    d.rectangle([0, 0, cw - 1, ch - 1], outline=pal["gold"], width=max(2, int(10 * s)))
+    d.rectangle([int(16 * s), int(16 * s), cw - int(17 * s), ch - int(17 * s)],
+                outline=pal["gold2"], width=max(1, int(3 * s)))
+    d.rectangle([int(26 * s), int(26 * s), cw - int(27 * s), name_b],
+                fill=pal["band"], outline=pal["gold"], width=max(1, int(3 * s)))
+    nf = ImageFont.truetype(fonts["b"], int((48 if len(sec["title"]) <= 12 else 40) * s))
+    d.text((int(72 * s), (int(26 * s) + name_b) // 2), sec["title"], font=nf,
            fill=pal["text_light"], anchor="lm")
 
     badge = data.get("badge")
     if badge:
-        r = 40
-        cx, cy = cw - 96, (26 + name_b) // 2
+        r = int(40 * s)
+        cx, cy = cw - int(96 * s), (int(26 * s) + name_b) // 2
         d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=pal["badge"],
-                  outline=pal["badge_ring"], width=4)
-        cf = ImageFont.truetype(fonts["b"], 30 if len(str(badge)) > 3 else 48)
+                  outline=pal["badge_ring"], width=max(2, int(4 * s)))
+        cf = ImageFont.truetype(fonts["b"], int((30 if len(str(badge)) > 3 else 48) * s))
         d.text((cx, cy), str(badge), font=cf, fill=pal["badge_txt"], anchor="mm")
 
     # --- art window ---
     # The window itself stays translucent (the backdrop shows through);
     # transparent art (crests) composites over the backdrop, never on an
-    # opaque fill — v6: a transparent crest must let the scene breathe.
-    win_w = cw - 128
-    win_h = art_b - name_b - 18
+    # opaque fill — a transparent crest must let the scene breathe.
+    win_w = cw - int(128 * s)
+    win_h = art_b - name_b - int(18 * s)
     win_plate = Image.new("RGBA", (win_w, win_h), (0, 0, 0, 0))
     art = Image.open(data["art"])
     if art.mode in ("P", "LA", "RGBA"):
@@ -157,59 +190,70 @@ def render(data, fonts):
         win_plate = Image.alpha_composite(win_plate, fitted)
     else:
         win_plate = _crop(art.convert("RGB"), win_w, win_h).convert("RGBA")
-    c.alpha_composite(win_plate, (64, name_b + 4))
-    d.rectangle([64, name_b + 4, 64 + win_w - 1, name_b + 4 + win_h - 1],
-                outline=pal["gold2"], width=3)
+    c.alpha_composite(win_plate, (int(64 * s), name_b + int(4 * s)))
+    d.rectangle([int(64 * s), name_b + int(4 * s),
+                 int(64 * s) + win_w - 1, name_b + int(4 * s) + win_h - 1],
+                outline=pal["gold2"], width=max(1, int(3 * s)))
 
     # --- italic type line ---
-    d.text((cw // 2, (art_b + type_b) // 2 + 2), sec.get("type_line", ""),
-           font=ImageFont.truetype(fonts["i"], 28), fill=pal["subtitle"], anchor="mm")
+    d.text((cw // 2, (art_b + type_b) // 2 + int(2 * s)), sec.get("type_line", ""),
+           font=ImageFont.truetype(fonts["i"], int(28 * s)),
+           fill=pal["subtitle"], anchor="mm")
 
     # --- parchment plate: heads + lines (the deck's rule box) ---
+    margin_x = int(56 * s)
     has_extra = bool(sec.get("extra_label"))
     r_bottom = int(ch * 0.81) if has_extra else rule_b
-    r_top = type_b + 6
+    r_top = type_b + int(6 * s)
     plate = Image.new("RGBA", (cw, r_bottom - r_top), (0, 0, 0, 0))
     pd = ImageDraw.Draw(plate)
-    pd.rounded_rectangle([MARGIN_X, 0, cw - MARGIN_X - 1, r_bottom - r_top - 1], radius=14,
-                         fill=tuple(pal["box"]) + (206,), outline=pal["gold2"] + (255,), width=3)
+    pd.rounded_rectangle([margin_x, 0, cw - margin_x - 1, r_bottom - r_top - 1],
+                         radius=max(4, int(14 * s)),
+                         fill=tuple(pal["box"]) + (206,),
+                         outline=pal["gold2"] + (255,), width=max(1, int(3 * s)))
     c.alpha_composite(plate, (0, r_top))
     d = ImageDraw.Draw(c)
-    head_f = ImageFont.truetype(fonts["b"], 24)
-    body_f = ImageFont.truetype(fonts["r"], 21)
-    y = r_top + 16
+    head_f = ImageFont.truetype(fonts["b"], int(24 * s))
+    body_f = ImageFont.truetype(fonts["r"], int(21 * s))
+    lh_head = int(32 * s)
+    lh_body = int(26 * s)
+    y = r_top + int(16 * s)
     for plate in sec.get("plates", []):
-        d.text((60, y), plate.get("head", ""), font=head_f, fill=pal["gold2"])
-        y += 32
+        d.text((int(60 * s), y), plate.get("head", ""), font=head_f, fill=pal["gold2"])
+        y += lh_head
         for item in plate.get("lines", []):
             for ln in _wrap(d, f"• {item}" if not str(item).startswith("•") else str(item),
-                            body_f, cw - 2 * MARGIN_X - 44)[:4]:
-                d.text((66, y), ln, font=body_f, fill=pal["ink"])
-                y += 26
-        y += 8
-    # vertical centering of the plate content
-    # (content is top-aligned; long lists fill the plate naturally)
+                            body_f, cw - 2 * margin_x - int(44 * s))[:4]:
+                d.text((int(66 * s), y), ln, font=body_f, fill=pal["ink"])
+                y += lh_body
+        y += int(8 * s)
 
     # --- linked-value box (banner color) ---
     if has_extra:
-        box = Image.new("RGBA", (cw, extra_b - r_bottom - 12), (0, 0, 0, 0))
+        box = Image.new("RGBA", (cw, extra_b - r_bottom - int(12 * s)), (0, 0, 0, 0))
         bd2 = ImageDraw.Draw(box)
-        bd2.rounded_rectangle([MARGIN_X, 0, cw - MARGIN_X - 1, extra_b - r_bottom - 13], radius=14,
-                              fill=tuple(pal["band"]) + (216,), outline=pal["gold"] + (255,), width=3)
-        c.alpha_composite(box, (0, r_bottom + 12))
+        bd2.rounded_rectangle([margin_x, 0, cw - margin_x - 1,
+                               extra_b - r_bottom - int(13 * s)],
+                              radius=max(4, int(14 * s)),
+                              fill=tuple(pal["band"]) + (216,),
+                              outline=pal["gold"] + (255,), width=max(1, int(3 * s)))
+        c.alpha_composite(box, (0, r_bottom + int(12 * s)))
         d = ImageDraw.Draw(c)
-        d.text((cw // 2, (r_bottom + 12 + extra_b) // 2 - 16), sec["extra_label"],
-               font=ImageFont.truetype(fonts["r"], 26), fill=pal["subtitle"], anchor="mm")
-        d.text((cw // 2, (r_bottom + 12 + extra_b) // 2 + 18), sec["extra_value"],
-               font=ImageFont.truetype(fonts["b"], 32), fill=pal["text_light"], anchor="mm")
+        mid = (r_bottom + int(12 * s) + extra_b) // 2
+        d.text((cw // 2, mid - int(16 * s)), sec["extra_label"],
+               font=ImageFont.truetype(fonts["r"], int(26 * s)),
+               fill=pal["subtitle"], anchor="mm")
+        d.text((cw // 2, mid + int(18 * s)), sec["extra_value"],
+               font=ImageFont.truetype(fonts["b"], int(32 * s)),
+               fill=pal["text_light"], anchor="mm")
 
     # --- footer ---
-    foot_t = extra_b + 8
-    d.rectangle([26, foot_t, cw - 27, ch - 27], fill=pal["footer"],
-                outline=pal["gold"], width=3)
-    ff = ImageFont.truetype(fonts["r"], 24)
-    d.text((48, (foot_t + ch - 27) // 2), sec.get("footer_left", ""),
+    foot_t = extra_b + int(8 * s)
+    d.rectangle([int(26 * s), foot_t, cw - int(27 * s), ch - int(27 * s)],
+                fill=pal["footer"], outline=pal["gold"], width=max(1, int(3 * s)))
+    ff = ImageFont.truetype(fonts["r"], int(24 * s))
+    d.text((int(48 * s), (foot_t + ch - int(27 * s)) // 2), sec.get("footer_left", ""),
            font=ff, fill=pal["footer_txt"], anchor="lm")
-    d.text((cw - 48, (foot_t + ch - 27) // 2), sec.get("footer_right", ""),
+    d.text((cw - int(48 * s), (foot_t + ch - int(27 * s)) // 2), sec.get("footer_right", ""),
            font=ff, fill=pal["footer_txt"], anchor="rm")
     return c
