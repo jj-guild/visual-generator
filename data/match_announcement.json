@@ -1,0 +1,17 @@
+{
+  "template": "match_announcement",
+  "output": "examples/match_announcement.jpg",
+  "art": "examples/assets/battle.jpg",
+  "sections": {
+    "left_name": "Aldric",
+    "left_avatar": "examples/assets/avatar_aldric.jpg",
+    "right_name": "Brunhild",
+    "right_avatar": "examples/assets/avatar_brunhild.jpg",
+    "map_art": "examples/assets/terr_golden-coast.jpg",
+    "map_name": "Golden Coast",
+    "vs": "VS",
+    "context_line": "Winter Tournament — Round 2",
+    "sub_line": "Settings: Hard · 2v2",
+    "footer": "Sunday 23:30 · Season II"
+  }
+}

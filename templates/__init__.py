@@ -1,1 +1,0 @@
-# visual-generator templates package

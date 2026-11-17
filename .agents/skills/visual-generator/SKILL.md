@@ -1,6 +1,6 @@
 ---
 name: visual-generator
-description: Render game visuals (TCG cards, match announcements, galleries, annotated world maps, parchment rules posters, contact sheets) from JSON data + templates + art, with OCR-verified text. Use whenever a game designer asks for card art, announcement banners, decks, illustrated rules, or any branded image.
+description: Render game visuals (match announcements, annotated world maps, merchant shops, entity cards, kingdom sheets) from JSON data + templates + art, with OCR-verified text. Use whenever a game designer asks for announcement banners, shop posts, entity sheets, realm overviews, or any branded image.
 ---
 
 # Visual generation (visual-generator)
@@ -37,8 +37,10 @@ uv sync
 uv run vg-render --data docs/visuals/data/<name>.json
 ```
 
-Dependencies (installed automatically): `pillow`, `matplotlib` (font
-bundle). Fonts auto-locate DejaVu Serif; `--font-dir` overrides.
+Runtime dependency: `pillow` only. Fonts auto-locate DejaVu Serif
+(system `fonts-dejavu`, or the matplotlib bundle via the optional
+`fonts` extra: `pip install "visual-generator[fonts]"`);
+`--font-dir` overrides.
 
 ## Pipeline (per visual)
 
@@ -56,9 +58,9 @@ bundle). Fonts auto-locate DejaVu Serif; `--font-dir` overrides.
 3. **Download the art immediately** — generated URLs expire (~1 h).
    Never share an expired link or a sandbox path with the user:
    deliver through committed files (raw GitHub URLs).
-4. **Render** — `vg-render --data <name>.json` (or `python engine/
-   render.py --data …` from a repo checkout). The `template` key
-   selects the layout module.
+4. **Render** — `vg-render --data <name>.json` (or `python -m
+   visual_generator.engine --data …` from a repo checkout). The
+   `template` key selects the layout module.
 5. **Validate — mandatory.** `vg-ocr-check --data <name>.json`
    (fail-closed: non-zero exit if any expected string is missing from
    the OCR transcript; requires tesseract + `fra`). In sandboxes
@@ -72,33 +74,32 @@ bundle). Fonts auto-locate DejaVu Serif; `--font-dir` overrides.
 
 ## Templates
 
-- `card_tcg` — TCG card. Fixed anatomy (name banner / art window /
-  type line / rule box / extra box / footer as fixed canvas fractions
-  — the art never shifts text zones). `cost`: int = N gear icons
-  (repeated currency icons), string = round text badge (e.g. "T").
-  Optional `extra_label`/`extra_value` box (linked value). `palette`
-  accepts hex overrides of any documented palette key.
-- `contact_sheet` — N card visuals re-rendered side by side on a
-  titled dark sheet (`card_template` + `cards` array), aspect kept.
-- `match_announcement` — Discord-sized (1200×675) X-vs-Y banner: large
-  crests centered per side, names below, attacker's civ icons (max 3)
-  under the name, battle-map medallion in the center, VS badge,
-  context band. Dim battle backdrop via the top-level `art` key.
-- `gallery` — titled grid of art+caption items (territories, civs).
-- `world_map` — real map art background with geo-placed region pins
-  (`x`/`y` on the 1600×1200 canvas; plates stay readable over busy
-  art).
-- `parchment_poster` — parchment texture background, titled, auto-
-  fitted multi-column rules text, fail-closed when content cannot fit.
-- `entity_card` — one entity's sheet, collector-card style: name
-  banner + badge, art window over a translucent backdrop, parchment
-  plates (sections with heads + lines), optional linked-value box.
-  The civilization / map / player card case; replaces long read-only
-  embeds. The backdrop stays visible (light veil); transparent art
-  (crests) lets it show through.
+All templates target Discord embeds: default canvases are under
+600 px wide, and each module declares its `STRUCTURE` — the canvas
+dimensions and the named image/text zones the consumer fills
+(inspect via `template_structure(name)`).
+
+- `match_announcement` — 576×324. Two players: round avatar
+  medallions + pseudos, battle-map medallion in the center, VS
+  badge, bottom band for tournament / settings / time. Dim battle
+  backdrop via the top-level `art` key. Pseudos ≈ 14 chars max.
+- `world_map` — 576×432. Real map art background with geo-placed
+  region spots: colored pin, or round crest spot when `icon` is
+  set (`x`/`y` px on the canvas; parchment plates stay readable
+  over busy art).
+- `merchant` — 576×384. Product sheets side by side: art window,
+  name, short description, price on a gold band. `columns` ≤ 4.
+- `entity_card` — 576×800 (scales with `canvas`). One entity's
+  sheet, collector-card style: name banner + badge, art window over
+  a translucent backdrop, parchment plates (heads + lines),
+  optional linked-value box. The territory / civ / player card case.
+- `kingdom` — 576×324. Castle scene background (`art`, veiled),
+  kingdom name, centered row of owned-territory icons (optional
+  caption each), ruler line in the bottom band. Up to 8 icons.
 
 New template? Copy an existing one, keep the contract: `render(data,
-fonts)` + `DEFAULT_PALETTE`, document the JSON schema in the
+fonts)` + `DEFAULT_PALETTE` + `STRUCTURE` (canvas < 600 px wide,
+zones inside the canvas), document the JSON schema in the
 docstring, ship a `data/` example and validate it by OCR.
 
 ## Known pitfalls (all learned the hard way)
@@ -108,7 +109,7 @@ docstring, ship a `data/` example and validate it by OCR.
 - Pins placed without inspecting the map art end up in the ocean —
   always check the generated map first.
 - Text over busy art fails OCR — flatten a plate behind it (see the
-  world_map / parchment_poster templates).
+  world_map / merchant templates).
 - Sandbox paths in JSON break re-rendering — art paths are always
   repo-relative.
 - Binary assets in git: keep example assets small (≤ ~300 KB each)

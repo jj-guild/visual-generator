@@ -1,0 +1,18 @@
+{
+  "template": "kingdom",
+  "output": "examples/kingdom.jpg",
+  "art": "examples/assets/castle.jpg",
+  "sections": {
+    "title": "The Rivermark",
+    "icons": [
+      {"art": "examples/assets/terr_twin-lakes.jpg", "caption": "Twin Lakes"},
+      {"art": "examples/assets/terr_northern-pass.jpg", "caption": "Northern Pass"},
+      {"art": "examples/assets/terr_black-forest.jpg", "caption": "Black Forest"},
+      {"art": "examples/assets/terr_golden-coast.jpg", "caption": "Golden Coast"},
+      {"art": "examples/assets/terr_iron-hills.jpg", "caption": "Iron Hills"},
+      {"art": "examples/assets/terr_sun-valley.jpg", "caption": "Sun Valley"}
+    ],
+    "subtitle": "Ruled by Aldric — 6 territories",
+    "footer": "Demo Game — Season II"
+  }
+}
