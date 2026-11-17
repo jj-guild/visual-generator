@@ -90,7 +90,8 @@ bump (SemVer).
 | `template_structure` | `(name: str) -> dict` | Declared structure of a template: canvas + zones |
 
 CLIs (same fail-closed contract): `vg-render`, `vg-ocr-check`,
-`vg-demo-assets` (regenerates the neutral demo art procedurally).
+`vg-demo-assets` (procedural stand-in art — text-free, no image model
+needed; the shipped `examples/assets/` are image-model generated).
 
 ## Targets and declared structure
 

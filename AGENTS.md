@@ -38,8 +38,10 @@ belong in the JSON data files of the consuming project, never here.
    via generated links or sandbox paths.
 8. **No game-specific content.** Names, brands, crests and lore of a
    concrete game live in that game's repository. This repo ships
-   neutral examples only (`visual_generator/demo_assets.py` generates the
-   demo art procedurally, without any image model).
+   neutral examples only. The shipped example art is image-model
+   generated (always prompted text-free, and inspected before commit);
+   `visual_generator/demo_assets.py` provides procedural stand-in art
+   for projects without an image model.
 
 ## Workflow
 

@@ -4,9 +4,9 @@
   "art": "examples/assets/battle.jpg",
   "sections": {
     "left_name": "Aldric",
-    "left_avatar": "examples/assets/avatar_aldric.png",
+    "left_avatar": "examples/assets/avatar_aldric.jpg",
     "right_name": "Brunhild",
-    "right_avatar": "examples/assets/avatar_brunhild.png",
+    "right_avatar": "examples/assets/avatar_brunhild.jpg",
     "map_art": "examples/assets/terr_golden-coast.jpg",
     "map_name": "Golden Coast",
     "vs": "VS",
