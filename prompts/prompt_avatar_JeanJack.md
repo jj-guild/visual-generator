@@ -7,7 +7,7 @@ avec le pipeline du repo (skill `avatar`) :
 # 1. fond : crop carré + flou (aucune correction colorimétrique)
 python tools/make_avatar.py bg \
     --src examples/assets/scenes/lan/raw_bg_LAN.png \
-    --out examples/assets/scenes/lan/bg_LAN_blurry.png --blur 5
+    --out examples/assets/scenes/lan/bg_LAN_blurry.png --blur 3
 
 # 2. cutout : personnage transparent (rembg, matting doux —
 #    préserve les bras fins et les interstices du casque)
@@ -20,7 +20,7 @@ python tools/make_avatar.py cutout \
 python tools/make_avatar.py compose \
     --bg examples/assets/scenes/lan/bg_LAN_blurry.png \
     --character examples/assets/personnages/jeanjack/cutout_JeanJack.png \
-    --out examples/avatars/avatar_JeanJack.png
+    --out examples/avatars/avatar_JeanJack.png --dx 20
 ```
 
 ## Règles de cadrage (défauts du CLI = règles de session)
@@ -32,6 +32,8 @@ python tools/make_avatar.py compose \
 | Centrage | sur la plaque (l'ancre), jamais sur les bras |
 | Bord bas | corps coupé net, aucun écart de pixels |
 | Canvas | carré 896 px (`--size 896`) |
+| Nudge horizontal | `--dx` px (pose en biais : +20 ici, à ajuster à l'œil) |
+| Flou du fond | `--blur 3` (5 masque la scène) |
 | Taille fichier | PNG < 1 Mo (`--max-kb 1024`, fail-closed) |
 
 ## Doctrine

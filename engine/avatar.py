@@ -142,6 +142,7 @@ def build_avatar(bg: str, character: str, out: str, size: int = DEFAULT_SIZE,
                  headroom: float = DEFAULT_HEADROOM,
                  plate_bottom: float = DEFAULT_PLATE_BOTTOM,
                  anchor: tuple[float, float] | None = None,
+                 dx: int = 0, dy: int = 0,
                  max_bytes: int = DEFAULT_MAX_BYTES) -> str:
     """Compose the avatar: bg -> character, anchor-driven, cut flush.
 
@@ -171,8 +172,8 @@ def build_avatar(bg: str, character: str, out: str, size: int = DEFAULT_SIZE,
     anchor_px = bottom_frac * chh
     scale = ((plate_bottom - headroom) * size) / anchor_px
     ch_s = ch.resize((round(cw * scale), round(chh * scale)), Image.LANCZOS)
-    px = round(size / 2 - cx_frac * cw * scale)
-    py = round(headroom * size)
+    px = round(size / 2 - cx_frac * cw * scale) + dx
+    py = round(headroom * size) + dy
 
     canvas = bg_img.convert("RGBA")
     canvas.alpha_composite(ch_s, (px, py))
