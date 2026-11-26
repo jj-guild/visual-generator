@@ -21,17 +21,17 @@ jobs:
       - name: Prepare background (square + blur)
         run: |
           python tools/make_avatar.py bg \
-            --src examples/assets/jeanjack/bg_LAN_raw.png \
+            --src examples/assets/jeanjack/raw_bg_LAN.png \
             --out /tmp/bg_LAN.png --blur 5
       - name: Detect anchor (auto)
         run: |
           python tools/make_avatar.py anchor \
-            --character examples/assets/jeanjack/character_JeanJack.png
+            --character examples/assets/jeanjack/cutout_JeanJack.png
       - name: Compose avatar
         run: |
           python tools/make_avatar.py compose \
             --bg /tmp/bg_LAN.png \
-            --character examples/assets/jeanjack/character_JeanJack.png \
+            --character examples/assets/jeanjack/cutout_JeanJack.png \
             --out /tmp/avatar_JeanJack.png
       - name: Verify square + under 1 MB
         run: |

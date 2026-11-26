@@ -5,18 +5,18 @@ Workflow, one command per step::
 
     # 1. prepare the background: square crop + blur from a sharp scene
     python tools/make_avatar.py bg \\
-        --src examples/assets/jeanjack/bg_LAN_raw.png \\
-        --out examples/assets/jeanjack/bg_LAN.png --blur 5
+        --src examples/assets/jeanjack/raw_bg_LAN.png \\
+        --out examples/assets/jeanjack/bg_LAN_blurry.png --blur 5
 
     # 2. cut out the character from its raw render (flat background)
     python tools/make_avatar.py cutout \\
         --src examples/assets/jeanjack/raw_JeanJack.png \\
-        --out examples/assets/jeanjack/character_JeanJack.png
+        --out examples/assets/jeanjack/cutout_JeanJack.png
 
     # 3. compose the avatar (anchor auto-detected on the nameplate)
     python tools/make_avatar.py compose \\
-        --bg examples/assets/jeanjack/bg_LAN.png \\
-        --character examples/assets/jeanjack/character_JeanJack.png \\
+        --bg examples/assets/jeanjack/bg_LAN_blurry.png \\
+        --character examples/assets/jeanjack/cutout_JeanJack.png \\
         --out examples/assets/jeanjack/avatar_JeanJack.png
 
 Every step fails closed with an explicit message. The final avatar is

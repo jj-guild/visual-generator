@@ -11,7 +11,7 @@ The pipeline turns two generated images into one avatar:
 
 ```
 raw_user.png  (character on a flat uniform background)
-bg_*.png      (sharp scene)  ──►  tools/make_avatar.py  ──►  avatar_user.png
+raw_bg_*.png  (sharp scene)  ──►  tools/make_avatar.py  ──►  avatar_user.png
 ```
 
 It is element-based by doctrine: **each element is generated once,
@@ -19,6 +19,18 @@ never edited**. If a criterion fails, regenerate the element — never
 retouch a generated render (no inpainting, no clone patch, no
 pixel surgery). Compositing (crop, scale, position, blur) is the only
 allowed transformation.
+
+## Asset naming convention
+
+| Prefix | Meaning |
+|---|---|
+| `raw_<name>.png` | generated character render, untouched (flat background, full body) |
+| `raw_bg_<name>.png` | generated sharp scene, untouched |
+| `cutout_<name>.png` | transparent character extraction |
+| `bg_<name>_blurry.png` | prepared background: square crop + blur |
+| `avatar_<name>.png` | final: assembled, cropped, size-bound — profile-picture ready |
+
+Candidates under selection are numbered: `raw_<name>_01.png`, …
 
 ## Before generating — ask if absent
 
@@ -73,28 +85,28 @@ Hard criteria:
 ```bash
 # 1. background: square center-crop + Gaussian blur (never color-correct
 #    the scene beyond the explicit --brightness the user asked for)
-python tools/make_avatar.py bg --src bg_LAN_raw.png --out bg_LAN.png --blur 5
+python tools/make_avatar.py bg --src raw_bg_LAN_blurry.png --out bg_LAN_blurry.png --blur 5
 
 # 2. cutout: transparent character (rembg, alpha matting tuned for
 #    thin arms and headset interstices)
-python tools/make_avatar.py cutout --src raw_user.png --out character_user.png
+python tools/make_avatar.py cutout --src raw_user.png --out cutout_user.png
 
 # 3. (optional) verify the auto-detected anchor
-python tools/make_avatar.py anchor --character character_user.png
+python tools/make_avatar.py anchor --character cutout_user.png
 
 # 4. avatar: anchor-driven framing, cut flush at the bottom, size-bound
-python tools/make_avatar.py compose --bg bg_LAN.png \
-    --character character_user.png --out avatar_user.png
+python tools/make_avatar.py compose --bg bg_LAN_blurry.png \
+    --character cutout_user.png --out avatar_user.png
 ```
 
 Agents doing programmatic work import the same core:
 
 ```python
 from engine import avatar
-avatar.prepare_background("bg_LAN_raw.png", "bg_LAN.png", blur=5)
-avatar.cutout_character("raw_user.png", "character_user.png")
-anchor = avatar.detect_anchor("character_user.png")   # (cx, bottom) fractions
-avatar.build_avatar("bg_LAN.png", "character_user.png", "avatar_user.png",
+avatar.prepare_background("raw_bg_LAN_blurry.png", "bg_LAN_blurry.png", blur=5)
+avatar.cutout_character("raw_user.png", "cutout_user.png")
+anchor = avatar.detect_anchor("cutout_user.png")   # (cx, bottom) fractions
+avatar.build_avatar("bg_LAN_blurry.png", "cutout_user.png", "avatar_user.png",
                     anchor=anchor)
 ```
 
@@ -130,8 +142,8 @@ The anchor maps the head-to-plate span onto 70% of the frame height;
 ## Reference run (jj-guild / JeanJack)
 
 `examples/assets/jeanjack/` holds the full reference set:
-`raw_JeanJack.png` (raw render), `character_JeanJack.png` (cutout),
-`bg_LAN_raw.png` (sharp scene), `bg_LAN.png` (prepared background),
+`raw_JeanJack.png` (raw render), `cutout_JeanJack.png` (cutout),
+`raw_bg_LAN_blurry.png` (sharp scene), `bg_LAN_blurry.png` (prepared background),
 `avatar_JeanJack.png` (896 px, < 1 MB). Reproduce the avatar with the
 commands above; the README section "Avatar generation" documents the
 prompts used for both raw assets.

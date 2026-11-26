@@ -61,28 +61,41 @@ once and never edited: if a criterion fails, the element is
 regenerated; compositing (crop, scale, position, blur) is the only
 allowed transformation.
 
-| raw character | cutout | sharp scene | prepared background | avatar |
+### Asset naming convention
+
+| Prefix | Meaning | Stage |
+|---|---|---|
+| `raw_<name>.png` | generated, untouched | character render on a flat background |
+| `raw_bg_<name>.png` | generated, untouched | sharp background scene |
+| `cutout_<name>.png` | extracted | transparent character (interstices kept) |
+| `bg_<name>_blurry.png` | prepared background | square crop + blur |
+| `avatar_<name>.png` | **final** | assembled, cropped, size-bound — profile-picture ready |
+
+Candidates under selection are numbered: `raw_JeanJack_01.png`,
+`raw_bg_LAN_01.png`, …
+
+| raw render | cutout | raw scene | blurry background | avatar |
 |---|---|---|---|---|
-| ![Raw render](examples/assets/jeanjack/raw_JeanJack.png) | ![Cutout](examples/assets/jeanjack/character_JeanJack.png) | ![Sharp scene](examples/assets/jeanjack/bg_LAN_raw.png) | ![Prepared background](examples/assets/jeanjack/bg_LAN.png) | ![Avatar](examples/assets/jeanjack/avatar_JeanJack.png) |
+| ![Raw render](examples/assets/jeanjack/raw_JeanJack.png) | ![Cutout](examples/assets/jeanjack/cutout_JeanJack.png) | ![Sharp scene](examples/assets/jeanjack/raw_bg_LAN.png) | ![Prepared background](examples/assets/jeanjack/bg_LAN_blurry.png) | ![Avatar](examples/assets/jeanjack/avatar_JeanJack.png) |
 
 ### Step by step
 
 ```bash
 # 1. prepare the background: square center-crop + Gaussian blur
 python tools/make_avatar.py bg \
-    --src examples/assets/jeanjack/bg_LAN_raw.png \
-    --out examples/assets/jeanjack/bg_LAN.png --blur 5
+    --src examples/assets/jeanjack/raw_bg_LAN.png \
+    --out examples/assets/jeanjack/bg_LAN_blurry.png --blur 5
 
 # 2. cut out the character (rembg, alpha matting tuned for thin arms
 #    and headset interstices)
 python tools/make_avatar.py cutout \
     --src examples/assets/jeanjack/raw_JeanJack.png \
-    --out examples/assets/jeanjack/character_JeanJack.png
+    --out examples/assets/jeanjack/cutout_JeanJack.png
 
 # 3. compose the avatar — anchor auto-detected on the nameplate
 python tools/make_avatar.py compose \
-    --bg examples/assets/jeanjack/bg_LAN.png \
-    --character examples/assets/jeanjack/character_JeanJack.png \
+    --bg examples/assets/jeanjack/bg_LAN_blurry.png \
+    --character examples/assets/jeanjack/cutout_JeanJack.png \
     --out examples/assets/jeanjack/avatar_JeanJack.png
 ```
 
@@ -99,9 +112,9 @@ Programmatic use (bots, drivers) imports the same core:
 
 ```python
 from engine import avatar
-avatar.prepare_background("bg_LAN_raw.png", "bg_LAN.png", blur=5)
-avatar.cutout_character("raw_user.png", "character_user.png")
-avatar.build_avatar("bg_LAN.png", "character_user.png", "avatar_user.png")
+avatar.prepare_background("raw_bg_LAN.png", "bg_LAN_blurry.png", blur=5)
+avatar.cutout_character("raw_user.png", "cutout_user.png")
+avatar.build_avatar("bg_LAN_blurry.png", "cutout_user.png", "avatar_user.png")
 ```
 
 ### Generating the raw elements
