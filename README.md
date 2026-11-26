@@ -52,6 +52,85 @@ optional linked-value box — the civilization / map / player card case.
 
 Texture background, auto-fitted multi-column rules text.
 
+## Avatar generation (`tools/make_avatar.py`)
+
+Square avatars composed from **two generated elements** — a
+character and a background — through a dedicated, element-based
+pipeline (not the JSON/template engine). Each element is generated
+once and never edited: if a criterion fails, the element is
+regenerated; compositing (crop, scale, position, blur) is the only
+allowed transformation.
+
+| raw character | cutout | sharp scene | prepared background | avatar |
+|---|---|---|---|---|
+| ![Raw render](examples/assets/jeanjack/raw_JeanJack.png) | ![Cutout](examples/assets/jeanjack/character_JeanJack.png) | ![Sharp scene](examples/assets/jeanjack/bg_LAN_raw.png) | ![Prepared background](examples/assets/jeanjack/bg_LAN.png) | ![Avatar](examples/assets/jeanjack/avatar_JeanJack.png) |
+
+### Step by step
+
+```bash
+# 1. prepare the background: square center-crop + Gaussian blur
+python tools/make_avatar.py bg \
+    --src examples/assets/jeanjack/bg_LAN_raw.png \
+    --out examples/assets/jeanjack/bg_LAN.png --blur 5
+
+# 2. cut out the character (rembg, alpha matting tuned for thin arms
+#    and headset interstices)
+python tools/make_avatar.py cutout \
+    --src examples/assets/jeanjack/raw_JeanJack.png \
+    --out examples/assets/jeanjack/character_JeanJack.png
+
+# 3. compose the avatar — anchor auto-detected on the nameplate
+python tools/make_avatar.py compose \
+    --bg examples/assets/jeanjack/bg_LAN.png \
+    --character examples/assets/jeanjack/character_JeanJack.png \
+    --out examples/assets/jeanjack/avatar_JeanJack.png
+```
+
+The framing is anchor-driven and encoded in the CLI defaults:
+**15%** of the frame free above the head, the nameplate anchor at
+**85%** of the height (≈15% of body visible below it, then cut
+flush by the bottom edge), centering on the anchor — never on the
+arms — and ~25% of background visible left and right. The avatar is
+a square 896 px PNG under 1 MB; the pipeline **fails closed** if the
+size bound cannot be met (missing art and undetectable anchors abort
+too).
+
+Programmatic use (bots, drivers) imports the same core:
+
+```python
+from engine import avatar
+avatar.prepare_background("bg_LAN_raw.png", "bg_LAN.png", blur=5)
+avatar.cutout_character("raw_user.png", "character_user.png")
+avatar.build_avatar("bg_LAN.png", "character_user.png", "avatar_user.png")
+```
+
+### Generating the raw elements
+
+Prompts that produced the reference assets (adapt the description,
+keep the constraints):
+
+**`raw_user.png`** — flat uniform background, full body, empty hands:
+
+> Full-body 3D render of `<character>` on a completely flat uniform
+> plain light-gray studio background, centered, full figure visible
+> head to feet, empty hands. `<identity: colors, headset, face — eyes,
+> mouth, explicit omissions>`. Nothing held, nothing on the back.
+
+**`bg_*.png`** — sharp scene, center uncluttered, no text:
+
+> `<scene>` — center of the frame relatively uncluttered, no visible
+> readable text, no logos. Natural photography look, sharp focus,
+> high detail, action in the middle distance.
+
+The reference scene: *“a LAN party in an attic, around ten people
+> playing a real-time strategy game for hours — long tables with
+> monitors, cables, warm light from desk lamps, evening atmosphere
+> through a small roof window.”*
+
+Agent-facing criteria for both generations, the QA checklist and the
+ask-if-absent constraints (aspect, size bound) live in the
+[avatar skill](.agents/skills/avatar/SKILL.md).
+
 ## Agent skill
 
 This repository ships the canonical agent skill for the library:

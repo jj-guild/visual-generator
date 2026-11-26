@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  avatar-pipeline:
+    name: Avatar pipeline (compose + size bound)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: pip install pillow numpy scipy
+      - name: Syntax check
+        run: python -m compileall engine tools templates
+      - name: Prepare background (square + blur)
+        run: |
+          python tools/make_avatar.py bg \
+            --src examples/assets/jeanjack/bg_LAN_raw.png \
+            --out /tmp/bg_LAN.png --blur 5
+      - name: Detect anchor (auto)
+        run: |
+          python tools/make_avatar.py anchor \
+            --character examples/assets/jeanjack/character_JeanJack.png
+      - name: Compose avatar
+        run: |
+          python tools/make_avatar.py compose \
+            --bg /tmp/bg_LAN.png \
+            --character examples/assets/jeanjack/character_JeanJack.png \
+            --out /tmp/avatar_JeanJack.png
+      - name: Verify square + under 1 MB
+        run: |
+          python - <<'EOF'
+          import os, sys
+          from PIL import Image
+          p = "/tmp/avatar_JeanJack.png"
+          im = Image.open(p)
+          assert im.size[0] == im.size[1] == 896, f"not a 896px square: {im.size}"
+          size = os.path.getsize(p)
+          assert size <= 1024 * 1024, f"avatar too big: {size} bytes"
+          print(f"ok: {im.size}, {size} bytes")
+          EOF
+
+  engine-render:
+    name: Engine renders (all data/*.json)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: pip install pillow matplotlib
+      - name: Render every example visual
+        run: |
+          set -e
+          for j in data/*.json; do
+            out="/tmp/$(basename "$j" .json).png"
+            python engine/render.py --data "$j" --out "$out"
+          done
