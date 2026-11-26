@@ -1,0 +1,137 @@
+---
+name: avatar
+description: Compose square avatars (character + background) from generated art — generate the raw character and the sharp scene with the right criteria, then run the avatar pipeline (cutout, background blur, anchor-driven framing, size bound). Use whenever a user asks for an avatar, a profile picture, or a character-on-background composition.
+---
+
+# Avatar generation (avatar pipeline)
+
+**Repository**: https://github.com/jj-guild/visual-generator
+
+The pipeline turns two generated images into one avatar:
+
+```
+raw_user.png  (character on a flat uniform background)
+bg_*.png      (sharp scene)  ──►  tools/make_avatar.py  ──►  avatar_user.png
+```
+
+It is element-based by doctrine: **each element is generated once,
+never edited**. If a criterion fails, regenerate the element — never
+retouch a generated render (no inpainting, no clone patch, no
+pixel surgery). Compositing (crop, scale, position, blur) is the only
+allowed transformation.
+
+## Before generating — ask if absent
+
+If the user does not specify, **ask** (never assume):
+
+- the final **aspect and size** (default proposal: square, 896 px);
+- the **size bound** of the avatar file (default proposal: < 1 MB PNG);
+- whether the background is a generated scene or a user image.
+
+Only the final avatar is size-bound. Raw assets are kept at maximum
+quality — never downscale `raw_user.png` or the scene to save space.
+
+## Generation criteria
+
+### raw_user.png (the character)
+
+Prompt skeleton (adapt, keep the constraints):
+
+> Full-body 3D render of <character description> on a completely
+> flat uniform plain light-gray studio background, centered, full
+> figure visible head to feet, empty hands. <identity details>. Face:
+> <eyes>, <mouth>, explicitly no nose if not wanted. Nothing held,
+> nothing on the back.
+
+Hard criteria, verified before moving on:
+
+- **flat uniform background** — the cutout depends on it;
+- **full body visible** (the pipeline crops, the render must not);
+- **empty hands** unless the user explicitly asks for a held item;
+- thin parts (arms, headset straps) clearly separated from the body
+  so the cutout keeps the interstices;
+- identity checks (zoom on the face) before any composition work.
+
+### bg_*.png (the sharp scene)
+
+Prompt skeleton:
+
+> <scene description>, center of the frame relatively uncluttered,
+> no visible readable text, no logos. Natural photography look,
+> sharp focus, high detail, action in the middle distance.
+
+Hard criteria:
+
+- **center uncluttered** — the avatar character lands dead center;
+- **no readable text, no logos** (the model misspells text);
+- resolution ≥ 1024 px on the short side;
+- the *scene must stay readable after the blur*: it is a backdrop,
+  not a wash.
+
+## Pipeline
+
+```bash
+# 1. background: square center-crop + Gaussian blur (never color-correct
+#    the scene beyond the explicit --brightness the user asked for)
+python tools/make_avatar.py bg --src bg_LAN_raw.png --out bg_LAN.png --blur 5
+
+# 2. cutout: transparent character (rembg, alpha matting tuned for
+#    thin arms and headset interstices)
+python tools/make_avatar.py cutout --src raw_user.png --out character_user.png
+
+# 3. (optional) verify the auto-detected anchor
+python tools/make_avatar.py anchor --character character_user.png
+
+# 4. avatar: anchor-driven framing, cut flush at the bottom, size-bound
+python tools/make_avatar.py compose --bg bg_LAN.png \
+    --character character_user.png --out avatar_user.png
+```
+
+Agents doing programmatic work import the same core:
+
+```python
+from engine import avatar
+avatar.prepare_background("bg_LAN_raw.png", "bg_LAN.png", blur=5)
+avatar.cutout_character("raw_user.png", "character_user.png")
+anchor = avatar.detect_anchor("character_user.png")   # (cx, bottom) fractions
+avatar.build_avatar("bg_LAN.png", "character_user.png", "avatar_user.png",
+                    anchor=anchor)
+```
+
+### Framing rules (the defaults encode them)
+
+| Rule | Default | Meaning |
+|---|---|---|
+| `--headroom` | 0.15 | 15% of the frame free above the head |
+| `--plate-bottom` | 0.85 | the anchor (nameplate bottom) sits at 85% |
+| anchor | auto | detected on the gold nameplate; centering follows it, **never the arms** |
+| bottom edge | by construction | the body is cut flush, zero background gap |
+| `--size` | 896 | square canvas |
+| `--max-kb` | 1024 | avatar PNG size bound (fail-closed) |
+
+The anchor maps the head-to-plate span onto 70% of the frame height;
+~15% of body stays visible below the plate, then the frame cuts it.
+
+## QA before delivering (all fail-closed)
+
+1. **Cutout**: render on a checkerboard — interstices transparent,
+   no leftover background, no halo; thin limbs present (numeric check:
+   multiple alpha segments at mid-torso height).
+2. **Background**: square, blurred as requested, center readable.
+3. **Avatar**: character top ≈ `headroom`, anchor at
+   `plate_bottom`, alpha content down to the last canvas row (no
+   bottom gap), background visible left and right.
+4. **Size**: `avatar_*.png` under the bound — the pipeline refuses
+   to deliver otherwise.
+5. Visual check of the face at full resolution: identity criteria
+   (eyes, mouth, no unwanted features). If a criterion fails:
+   **regenerate the raw element, never retouch it**.
+
+## Reference run (jj-guild / JeanJack)
+
+`examples/assets/jeanjack/` holds the full reference set:
+`raw_JeanJack.png` (raw render), `character_JeanJack.png` (cutout),
+`bg_LAN_raw.png` (sharp scene), `bg_LAN.png` (prepared background),
+`avatar_JeanJack.png` (896 px, < 1 MB). Reproduce the avatar with the
+commands above; the README section "Avatar generation" documents the
+prompts used for both raw assets.
