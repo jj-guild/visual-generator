@@ -76,27 +76,27 @@ Candidates under selection are numbered: `raw_JeanJack_01.png`,
 
 | raw render | cutout | raw scene | blurry background | avatar |
 |---|---|---|---|---|
-| ![Raw render](examples/assets/jeanjack/raw_JeanJack.png) | ![Cutout](examples/assets/jeanjack/cutout_JeanJack.png) | ![Sharp scene](examples/assets/jeanjack/raw_bg_LAN.png) | ![Prepared background](examples/assets/jeanjack/bg_LAN_blurry.png) | ![Avatar](examples/assets/jeanjack/avatar_JeanJack.png) |
+| ![Raw render](examples/assets/personnages/jeanjack/raw_JeanJack.png) | ![Cutout](examples/assets/personnages/jeanjack/cutout_JeanJack.png) | ![Sharp scene](examples/assets/scenes/lan/raw_bg_LAN.png) | ![Prepared background](examples/assets/scenes/lan/bg_LAN_blurry.png) | ![Avatar](examples/avatars/avatar_JeanJack.png) |
 
 ### Step by step
 
 ```bash
 # 1. prepare the background: square center-crop + Gaussian blur
 python tools/make_avatar.py bg \
-    --src examples/assets/jeanjack/raw_bg_LAN.png \
-    --out examples/assets/jeanjack/bg_LAN_blurry.png --blur 5
+    --src examples/assets/scenes/lan/raw_bg_LAN.png \
+    --out examples/assets/scenes/lan/bg_LAN_blurry.png --blur 5
 
 # 2. cut out the character (rembg, alpha matting tuned for thin arms
 #    and headset interstices)
 python tools/make_avatar.py cutout \
-    --src examples/assets/jeanjack/raw_JeanJack.png \
-    --out examples/assets/jeanjack/cutout_JeanJack.png
+    --src examples/assets/personnages/jeanjack/raw_JeanJack.png \
+    --out examples/assets/personnages/jeanjack/cutout_JeanJack.png
 
 # 3. compose the avatar — anchor auto-detected on the nameplate
 python tools/make_avatar.py compose \
-    --bg examples/assets/jeanjack/bg_LAN_blurry.png \
-    --character examples/assets/jeanjack/cutout_JeanJack.png \
-    --out examples/assets/jeanjack/avatar_JeanJack.png
+    --bg examples/assets/scenes/lan/bg_LAN_blurry.png \
+    --character examples/assets/personnages/jeanjack/cutout_JeanJack.png \
+    --out examples/avatars/avatar_JeanJack.png
 ```
 
 The framing is anchor-driven and encoded in the CLI defaults:
