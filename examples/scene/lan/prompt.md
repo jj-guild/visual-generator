@@ -1,5 +1,7 @@
 # Scene prompt — LAN party (raw generation)
 
+![LAN raw scene](raw.png)
+
 Generate `raw.png` for this scene. Every rule below was validated
 during the jj-guild avatar session; nothing here is arbitrary.
 

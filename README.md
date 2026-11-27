@@ -96,13 +96,15 @@ python tools/make_avatar.py cutout \
     --src examples/character/JeanJack/raw.png \
     --out examples/character/JeanJack/crop.png
 
-# 3. compose the avatar — anchor auto-detected on the nameplate.
+# 3. compose the avatar — anchor on the nameplate (auto-detected,
+#    or measured and passed explicitly if the detection drifts).
 #    The size bound is a per-request constraint (ask the user when
 #    absent — there is no universal default).
 python tools/make_avatar.py compose \
     --bg examples/scene/lan/background.png \
     --character examples/character/JeanJack/crop.png \
-    --out examples/avatar/JeanJack.png --dx 20 --max-kb 976
+    --out examples/avatar/JeanJack.png \
+    --anchor 0.4916,0.545 --max-kb 976
 ```
 
 (The JeanJack case asks for < 1 MB: `--max-kb 976` = 999,424 bytes.)
@@ -144,7 +146,7 @@ assets:
   ambient light, light-colored clothing, chaotic table layout,
   blocking criteria (luminance ≥ 55, no letterbox);
 - [`examples/avatar/prompt.md`](examples/avatar/prompt.md)
-  — the validated combination recipe (blur 4, `--dx 20`,
+  — the validated combination recipe (blur 4, measured anchor,
   `< 1 MB` bound of the JeanJack case).
 
 Agent-facing criteria for both generations, the QA checklist and the

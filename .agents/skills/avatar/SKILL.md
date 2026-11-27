@@ -133,7 +133,7 @@ avatar.build_avatar("scene/background.png", "character/crop.png", "avatar/Name.p
 |---|---|---|
 | `--headroom` | 0.15 | 15% of the frame free above the head |
 | `--plate-bottom` | 0.85 | the anchor (nameplate bottom) sits at 85% |
-| anchor | auto | detected on the gold nameplate; centering follows it, **never the arms** |
+| anchor | auto | detected on the gold nameplate; centering follows it, **never the arms**. VERIFY the detection: glossy warm metal highlights can fool it — pass the measured fractions (`--anchor cx,bottom`) when it drifts |
 | bottom edge | by construction | the body is cut flush, zero background gap |
 | `--size` | 896 | square canvas |
 | `--max-kb` | none | size bound in KiB — per-case, ask the user; PNG first, JPEG fallback under the bound (fail-closed) |
