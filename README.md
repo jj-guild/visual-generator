@@ -61,42 +61,48 @@ once and never edited: if a criterion fails, the element is
 regenerated; compositing (crop, scale, position, blur) is the only
 allowed transformation.
 
-### Asset naming convention
+### File layout (per-character / per-scene)
 
-| Prefix | Meaning | Stage |
-|---|---|---|
-| `raw_<name>.png` | generated, untouched | character render on a flat background |
-| `raw_bg_<name>.png` | generated, untouched | sharp background scene |
-| `cutout_<name>.png` | extracted | transparent character (interstices kept) |
-| `bg_<name>_blurry.png` | prepared background | square crop + blur |
-| `avatar_<name>.png` / `.jpg` | **final** | assembled, cropped, size-bound — profile-picture ready |
+```
+examples/character/<Name>/original.png   # identity reference, untouched
+examples/character/<Name>/raw.png        # generated render, untouched
+examples/character/<Name>/crop.png       # transparent extraction
+examples/scene/<name>/raw.png            # generated sharp scene, untouched
+examples/scene/<name>/background.png     # raw + square crop + blur
+examples/avatar/<Name>.png|.jpg          # final: crop + background, size-bound
+examples/character/<Name>/prompt.md      # generation prompt + blocking criteria
+examples/scene/<name>/prompt.md          # generation prompt + blocking criteria
+examples/avatar/prompt.md                # combination recipe (JeanJack example)
+```
 
-Candidates under selection are numbered: `raw_JeanJack_01.png`,
-`raw_bg_LAN_01.png`, …
+Candidates under selection are numbered: `raw_01.png`, `raw_02.png`,
+… in the same folder — they are removed once a candidate is chosen.
 
-| raw render | cutout | raw scene | blurry background | avatar |
+| raw render | crop | raw scene | background | avatar |
 |---|---|---|---|---|
-| ![Raw render](examples/assets/personnages/jeanjack/raw_JeanJack.png) | ![Cutout](examples/assets/personnages/jeanjack/cutout_JeanJack.png) | ![Sharp scene](examples/assets/scenes/lan/raw_bg_LAN.png) | ![Prepared background](examples/assets/scenes/lan/bg_LAN_blurry.png) | ![Avatar](examples/avatars/avatar_JeanJack.jpg) |
+| ![Raw render](examples/character/JeanJack/raw.png) | ![Crop](examples/character/JeanJack/crop.png) | ![Sharp scene](examples/scene/lan/raw.png) | ![Prepared background](examples/scene/lan/background.png) | ![Avatar](examples/avatar/JeanJack.jpg) |
 
 ### Step by step
 
 ```bash
 # 1. prepare the background: square center-crop + Gaussian blur
 python tools/make_avatar.py bg \
-    --src examples/assets/scenes/lan/raw_bg_LAN.png \
-    --out examples/assets/scenes/lan/bg_LAN_blurry.png --blur 4
+    --src examples/scene/lan/raw.png \
+    --out examples/scene/lan/background.png --blur 4
 
-# 2. cut out the character (rembg, alpha matting tuned for thin arms
+# 2. crop out the character (rembg, alpha matting tuned for thin arms
 #    and headset interstices)
 python tools/make_avatar.py cutout \
-    --src examples/assets/personnages/jeanjack/raw_JeanJack.png \
-    --out examples/assets/personnages/jeanjack/cutout_JeanJack.png
+    --src examples/character/JeanJack/raw.png \
+    --out examples/character/JeanJack/crop.png
 
-# 3. compose the avatar — anchor auto-detected on the nameplate
+# 3. compose the avatar — anchor auto-detected on the nameplate.
+#    The size bound is a per-request constraint (ask the user when
+#    absent — there is no universal default).
 python tools/make_avatar.py compose \
-    --bg examples/assets/scenes/lan/bg_LAN_blurry.png \
-    --character examples/assets/personnages/jeanjack/cutout_JeanJack.png \
-    --out examples/avatars/avatar_JeanJack.png --dx 20 --max-kb 976
+    --bg examples/scene/lan/background.png \
+    --character examples/character/JeanJack/crop.png \
+    --out examples/avatar/JeanJack.png --dx 20 --max-kb 976
 ```
 
 (The JeanJack case asks for < 1 MB: `--max-kb 976` = 999,424 bytes.)
@@ -106,44 +112,40 @@ The framing is anchor-driven and encoded in the CLI defaults:
 **85%** of the height (≈15% of body visible below it, then cut
 flush by the bottom edge), centering on the anchor — never on the
 arms — and ~25% of background visible left and right. The avatar is
-a square 896 px file. The **size bound is a per-request constraint
-(ask the user when absent — there is no universal default)**; pass it
-with `--max-kb`. The pipeline saves PNG first and, if the bound is
-exceeded, falls back to JPEG (quality ladder 92→70) before **failing
-closed** (missing art and undetectable anchors abort too).
+a square 896 px file. The pipeline saves PNG first and, if the
+bound is exceeded, falls back to JPEG, **binary-searching the
+highest quality that still fits the bound** (approaching the
+requested limit — a 1 MB bound must not produce a 50 KB file)
+before **failing closed** (missing art and undetectable anchors
+abort too).
 
 Programmatic use (bots, drivers) imports the same core:
 
 ```python
 from engine import avatar
-avatar.prepare_background("raw_bg_LAN.png", "bg_LAN_blurry.png", blur=4)
-avatar.cutout_character("raw_user.png", "cutout_user.png")
-avatar.build_avatar("bg_LAN_blurry.png", "cutout_user.png", "avatar_user.png",
-                    max_bytes=1_000_000)  # per-case bound, ask the user
+avatar.prepare_background("scene/raw.png", "scene/background.png", blur=4)
+avatar.cutout_character("character/raw.png", "character/crop.png")
+avatar.build_avatar("scene/background.png", "character/crop.png",
+                    "avatar/Name.png",
+                    max_bytes=1_000_000)  # per-request bound, ask the user
 ```
 
 ### Generating the raw elements
 
-Prompts that produced the reference assets (adapt the description,
-keep the constraints):
+The exact prompts that produced the reference assets — with every
+constraint justified, nothing pulled out of thin air — live with the
+assets:
 
-**`raw_user.png`** — flat uniform background, full body, empty hands:
-
-> Full-body 3D render of `<character>` on a completely flat uniform
-> plain light-gray studio background, centered, full figure visible
-> head to feet, empty hands. `<identity: colors, headset, face — eyes,
-> mouth, explicit omissions>`. Nothing held, nothing on the back.
-
-**`bg_*.png`** — sharp scene, center uncluttered, no text:
-
-> `<scene>` — center of the frame relatively uncluttered, no visible
-> readable text, no logos. Natural photography look, sharp focus,
-> high detail, action in the middle distance.
-
-The reference scene: *“a LAN party in an attic, around ten people
-> playing a real-time strategy game for hours — long tables with
-> monitors, cables, warm light from desk lamps, evening atmosphere
-> through a small roof window.”*
+- [`examples/character/JeanJack/prompt.md`](examples/character/JeanJack/prompt.md)
+  — identity rules (no nose, closed-mouth smirk, headset-attached
+  mic, empty hands), flat background, full body;
+- [`examples/scene/lan/prompt.md`](examples/scene/lan/prompt.md)
+  — modern LCD screens (one facing each player), windowless bright
+  ambient light, light-colored clothing, chaotic table layout,
+  blocking criteria (luminance ≥ 55, no letterbox);
+- [`examples/avatar/prompt.md`](examples/avatar/prompt.md)
+  — the validated combination recipe (blur 4, `--dx 20`,
+  `< 1 MB` bound of the JeanJack case).
 
 Agent-facing criteria for both generations, the QA checklist and the
 ask-if-absent constraints (aspect, size bound) live in the

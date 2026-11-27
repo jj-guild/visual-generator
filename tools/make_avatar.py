@@ -5,23 +5,24 @@ Workflow, one command per step::
 
     # 1. prepare the background: square crop + blur from a sharp scene
     python tools/make_avatar.py bg \\
-        --src examples/assets/scenes/lan/raw_bg_LAN.png \\
-        --out examples/assets/scenes/lan/bg_LAN_blurry.png --blur 5
+        --src examples/scene/lan/raw.png \\
+        --out examples/scene/lan/background.png --blur 4
 
-    # 2. cut out the character from its raw render (flat background)
+    # 2. crop the character out of its raw render (flat background)
     python tools/make_avatar.py cutout \\
-        --src examples/assets/personnages/jeanjack/raw_JeanJack.png \\
-        --out examples/assets/personnages/jeanjack/cutout_JeanJack.png
+        --src examples/character/JeanJack/raw.png \\
+        --out examples/character/JeanJack/crop.png
 
     # 3. compose the avatar (anchor auto-detected on the nameplate)
     python tools/make_avatar.py compose \\
-        --bg examples/assets/scenes/lan/bg_LAN_blurry.png \\
-        --character examples/assets/personnages/jeanjack/cutout_JeanJack.png \\
-        --out examples/avatars/avatar_JeanJack.png
+        --bg examples/scene/lan/background.png \\
+        --character examples/character/JeanJack/crop.png \\
+        --out examples/avatar/JeanJack.png --dx 20 --max-kb 976
 
 Every step fails closed with an explicit message. The final avatar is
-a square PNG under 1 MB (ask the user for the size bound and the final
-aspect if they are not specified — defaults: square, 896px, 1 MB).
+a square file under the requested size bound (ask the user for the
+bound and the final aspect if they are not specified — there is no
+universal default; proposal: square, 896 px, < 1 MB).
 """
 
 from __future__ import annotations

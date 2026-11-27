@@ -10,8 +10,9 @@ description: Compose square avatars (character + background) from generated art 
 The pipeline turns two generated images into one avatar:
 
 ```
-raw_user.png  (character on a flat uniform background)
-raw_bg_*.png  (sharp scene)  ──►  tools/make_avatar.py  ──►  avatar_user.png
+examples/character/<Name>/raw.png   (character on a flat uniform background)
+examples/scene/<name>/raw.png       (sharp scene)
+   ──►  tools/make_avatar.py  ──►  examples/avatar/<Name>.png|.jpg
 ```
 
 It is element-based by doctrine: **each element is generated once,
@@ -20,17 +21,22 @@ retouch a generated render (no inpainting, no clone patch, no
 pixel surgery). Compositing (crop, scale, position, blur) is the only
 allowed transformation.
 
-## Asset naming convention
+## File layout & naming (per-character / per-scene)
 
-| Prefix | Meaning |
+| Path | Meaning |
 |---|---|
-| `raw_<name>.png` | generated character render, untouched (flat background, full body) |
-| `raw_bg_<name>.png` | generated sharp scene, untouched |
-| `cutout_<name>.png` | transparent character extraction |
-| `bg_<name>_blurry.png` | prepared background: square crop + blur |
-| `avatar_<name>.png` / `.jpg` | final: assembled, cropped, size-bound — profile-picture ready |
+| `examples/character/<Name>/original.png` | identity reference, untouched |
+| `examples/character/<Name>/raw.png` | generated render, untouched (flat background, full body) |
+| `examples/character/<Name>/crop.png` | transparent character extraction |
+| `examples/scene/<name>/raw.png` | generated sharp scene, untouched |
+| `examples/scene/<name>/background.png` | prepared background: square crop + blur |
+| `examples/avatar/<Name>.png` / `.jpg` | final: assembled, cropped, size-bound — profile-picture ready |
+| `examples/character/<Name>/prompt.md` | generation prompt + blocking criteria |
+| `examples/scene/<name>/prompt.md` | generation prompt + blocking criteria |
+| `examples/avatar/prompt.md` | combination recipe (reference case) |
 
-Candidates under selection are numbered: `raw_<name>_01.png`, …
+Candidates under selection are numbered in the same folder
+(`raw_01.png`, `raw_02.png`, …) and removed once a candidate is chosen.
 
 ## Before generating — ask if absent
 
@@ -43,13 +49,13 @@ If the user does not specify, **ask** (never assume):
 - whether the background is a generated scene or a user image.
 
 Only the final avatar is size-bound. Raw assets are kept at maximum
-quality — never downscale `raw_user.png` or the scene to save space.
+quality — never downscale `raw.png` or the scene to save space.
 
 ## Generation criteria
 
-### raw_user.png (the character)
+### character `raw.png`
 
-Prompt skeleton (adapt, keep the constraints):
+Full prompts live next to the assets (`examples/character/<Name>/prompt.md`) — every constraint is justified there. Skeleton (adapt, keep the constraints):
 
 > Full-body 3D render of <character description> on a completely
 > flat uniform plain light-gray studio background, centered, full
@@ -66,9 +72,9 @@ Hard criteria, verified before moving on:
   so the cutout keeps the interstices;
 - identity checks (zoom on the face) before any composition work.
 
-### bg_*.png (the sharp scene)
+### scene `raw.png` (the sharp scene)
 
-Prompt skeleton:
+Full prompts live next to the assets (`examples/scene/<name>/prompt.md`). Skeleton:
 
 > <scene description>, center of the frame relatively uncluttered,
 > no visible readable text, no logos. Natural photography look,
@@ -92,29 +98,32 @@ Hard criteria:
 ```bash
 # 1. background: square center-crop + Gaussian blur (never color-correct
 #    the scene beyond the explicit --brightness the user asked for)
-python tools/make_avatar.py bg --src raw_bg_LAN.png --out bg_LAN_blurry.png --blur 4
+python tools/make_avatar.py bg \
+    --src examples/scene/<name>/raw.png --out examples/scene/<name>/background.png --blur 4
 
-# 2. cutout: transparent character (rembg, alpha matting tuned for
+# 2. crop: transparent character (rembg, alpha matting tuned for
 #    thin arms and headset interstices)
-python tools/make_avatar.py cutout --src raw_user.png --out cutout_user.png
+python tools/make_avatar.py cutout \
+    --src examples/character/<Name>/raw.png --out examples/character/<Name>/crop.png
 
 # 3. (optional) verify the auto-detected anchor
-python tools/make_avatar.py anchor --character cutout_user.png
+python tools/make_avatar.py anchor --character examples/character/<Name>/crop.png
 
 # 4. avatar: anchor-driven framing, cut flush at the bottom, size-bound
-python tools/make_avatar.py compose --bg bg_LAN_blurry.png \
-    --character cutout_user.png --out avatar_user.png
+python tools/make_avatar.py compose --bg examples/scene/<name>/background.png \
+    --character examples/character/<Name>/crop.png \
+    --out examples/avatar/<Name>.png --max-kb <bound>
 ```
 
 Agents doing programmatic work import the same core:
 
 ```python
 from engine import avatar
-avatar.prepare_background("raw_bg_LAN.png", "bg_LAN_blurry.png", blur=4)
-avatar.cutout_character("raw_user.png", "cutout_user.png")
-anchor = avatar.detect_anchor("cutout_user.png")   # (cx, bottom) fractions
-avatar.build_avatar("bg_LAN_blurry.png", "cutout_user.png", "avatar_user.png",
-                    max_bytes=1_000_000,  # per-case bound, ask the user
+avatar.prepare_background("scene/raw.png", "scene/background.png", blur=4)
+avatar.cutout_character("character/raw.png", "character/crop.png")
+anchor = avatar.detect_anchor("character/crop.png")   # (cx, bottom) fractions
+avatar.build_avatar("scene/background.png", "character/crop.png", "avatar/Name.png",
+                    max_bytes=1_000_000,  # per-request bound, ask the user
                     anchor=anchor)
 ```
 
@@ -143,18 +152,23 @@ The anchor maps the head-to-plate span onto 70% of the frame height;
    bottom gap), background visible left and right.
 4. **Size**: under the bound when one was requested — the pipeline
    refuses to deliver otherwise. PNG first; if the PNG exceeds the
-   bound, the pipeline falls back to JPEG (quality ladder 92→70)
-   which keeps gradients clean, unlike palette quantization.
+   bound, the pipeline falls back to JPEG, binary-searching the
+   HIGHEST quality that fits the bound (approaching the requested
+   limit — a 1 MB bound must not yield a 50 KB file), which keeps
+   gradients clean, unlike palette quantization.
 5. Visual check of the face at full resolution: identity criteria
    (eyes, mouth, no unwanted features). If a criterion fails:
    **regenerate the raw element, never retouch it**.
 
 ## Reference run (jj-guild / JeanJack)
 
-`examples/assets/jeanjack/` holds the full reference set:
-`raw_JeanJack.png` (raw render), `cutout_JeanJack.png` (cutout),
-`raw_bg_LAN_blurry.png` (sharp scene), `bg_LAN_blurry.png` (prepared background),
-`avatar_JeanJack.jpg` (896 px, 143 KB — the < 1 MB bound of this case
-forced the JPEG fallback, quality 92). Reproduce the avatar with the
-commands above; the README section "Avatar generation" documents the
-prompts used for both raw assets.
+- `examples/character/JeanJack/` — `original.png` (identity
+  reference), `raw.png`, `crop.png`, `prompt.md`;
+- `examples/scene/lan/` — `raw.png`, `background.png`, `prompt.md`;
+- `examples/avatar/JeanJack.jpg` — 896 px, 392 KB: the < 1 MB bound
+  of this case exceeded the PNG (1.04 MB), so the pipeline fell back
+  to JPEG at the highest fitting quality (100).
+- `examples/avatar/prompt.md` — the exact combination recipe.
+
+Reproduce the avatar with the commands above; each prompt file
+documents its blocking criteria.

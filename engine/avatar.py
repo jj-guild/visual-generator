@@ -182,23 +182,37 @@ def build_avatar(bg: str, character: str, out: str, size: int = DEFAULT_SIZE,
     canvas.save(out, optimize=True)
     if max_bytes and os.path.getsize(out) > max_bytes:
         # JPEG fallback for opaque avatars: unlike palette quantization
-        # it does not posterize gradients. Try decreasing qualities,
-        # fail closed below the quality floor.
+        # it does not posterize gradients. Binary-search the HIGHEST
+        # quality whose size stays under the bound: the deliverable
+        # approaches the requested limit (a bound of 1 MB must not
+        # produce a 50 KB file). Fail closed below the quality floor.
         jpeg_out = os.path.splitext(out)[0] + ".jpg"
         rgb = canvas.convert("RGB")
-        saved = None
-        for quality in (92, 88, 84, 80, 76, 70):
+
+        def jpeg_size(quality: int) -> int:
             rgb.save(jpeg_out, format="JPEG", quality=quality,
                      optimize=True, progressive=True)
-            if os.path.getsize(jpeg_out) <= max_bytes:
-                saved = jpeg_out
-                break
-        if saved is None:
+            return os.path.getsize(jpeg_out)
+
+        lo, hi = 70, 100
+        if jpeg_size(hi) <= max_bytes:
+            os.remove(out)
+            return jpeg_out
+        best = None
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            if jpeg_size(mid) <= max_bytes:
+                best = mid
+                lo = mid + 1
+            else:
+                hi = mid - 1
+        if best is None:
             sys.exit(f"avatar: cannot fit under {max_bytes} bytes "
-                     f"(JPEG quality 70 minimum); reduce --size "
+                     f"(JPEG quality {lo} minimum); reduce --size "
                      "or simplify the art")
+        jpeg_size(best)
         os.remove(out)
-        return saved
+        return jpeg_out
     actual = os.path.getsize(out)
     if max_bytes and actual > max_bytes:
         sys.exit(f"avatar: {out} is {actual} bytes (> {max_bytes}); "

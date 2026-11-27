@@ -21,26 +21,26 @@ jobs:
       - name: Prepare background (square + blur)
         run: |
           python tools/make_avatar.py bg \
-            --src examples/assets/scenes/lan/raw_bg_LAN.png \
+            --src examples/scene/lan/raw.png \
             --out /tmp/bg_LAN_blurry.png --blur 4
       - name: Detect anchor (auto)
         run: |
           python tools/make_avatar.py anchor \
-            --character examples/assets/personnages/jeanjack/cutout_JeanJack.png
+            --character examples/character/JeanJack/crop.png
       - name: Compose avatar (JeanJack case — square 896, bound 1 MB)
         run: |
           python tools/make_avatar.py compose \
             --bg /tmp/bg_LAN_blurry.png \
-            --character examples/assets/personnages/jeanjack/cutout_JeanJack.png \
-            --out /tmp/avatar_JeanJack.png --dx 20 --max-kb 976
+            --character examples/character/JeanJack/crop.png \
+            --out /tmp/JeanJack.png --dx 20 --max-kb 976
       - name: Verify square + under 1 MB
         run: |
           python - <<'EOF'
           import os, sys
           from PIL import Image
-          p = "/tmp/avatar_JeanJack.png"
+          p = "/tmp/JeanJack.png"
           if not os.path.exists(p):
-              p = "/tmp/avatar_JeanJack.jpg"
+              p = "/tmp/JeanJack.jpg"
           im = Image.open(p)
           assert im.size[0] == im.size[1] == 896, f"not a 896px square: {im.size}"
           size = os.path.getsize(p)
