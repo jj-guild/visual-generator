@@ -14,37 +14,44 @@ shape, same gold nameplate), not a crop of the reference.
 ## Prompt used (edit of the user's reference, not of a prior
 generation)
 
-> Regenerate this exact same robot character with a brighter, evenly
-> lit look. Keep the identity identical: same proportions and
-> rounded head shape, glowing round bright golden-yellow eyes, same
-> small subtle closed-mouth smirk (no teeth, no nose), same large
-> gaming headset with an attached microphone reaching under the
-> mouth, same small gold nameplate on the chest reading "JeanJack",
-> slim three-finger robot hands. Changes: remove the baguette and
+> Regenerate this exact same robot character. Keep the identity
+> identical: same proportions and rounded head shape, glowing round
+> bright golden-yellow eyes, same small subtle closed-mouth smirk
+> (no teeth, no nose), same nameplate position on the chest, slim
+> three-finger robot hands. Changes: remove the baguette and
 > everything held in his hands (empty hands held slightly away from
-> the body), make the body a brighter medium warm-brown glossy metal
-> with soft even highlights across the whole figure, completely
-> uniform bright soft studio lighting with no dark areas and no
-> shadows, full body visible head to feet, standing on a completely
-> flat uniform light-gray background. Sharp focus, high detail, no
-> other objects, no readable text other than the nameplate.
+> the body); the body is a medium warm-brown satin metal, a touch
+> less bright and less glossy than a mirror finish but clearly
+> lighter than dark matte brown, softly and evenly lit across the
+> whole figure by uniform bright studio light, no dark areas, no
+> harsh shadows; the gaming headset is matte black with an attached
+> matte-black microphone reaching under the mouth; the nameplate on
+> the chest is matte black with the name "JeanJack" engraved in
+> shiny gold letters; full body visible head to feet, standing on a
+> completely flat uniform light-gray background. Sharp focus, high
+> detail, no other objects, no readable text other than the
+> nameplate.
 
 ## Why each constraint (session-validated)
 
-- **brighter medium warm-brown glossy metal, uniform lighting** —
-  the first render was dark matte brown; against the LAN background
-  the character read too dark (user: "he is too dark, brighten him,
-  light him evenly"). The identity stays, the exposure changes;
+- **medium warm-brown satin, uniform lighting** — iteration 1 was
+  dark matte brown (unreadable against the LAN background), the
+  first brightening was high-gloss (user: "a touch less bright than
+  v2"); satin keeps the readability without the mirror glare;
 - **flat uniform background** — the crop step depends on it;
 - **full body visible** — the pipeline crops, the render must not;
 - **empty hands, nothing on the back** — held items (the baguette)
   failed every generation attempt; the user dropped them;
 - **no nose** — explicitly rejected by the user;
 - **small closed-mouth smirk** — every larger smile rendered creepy;
-- **microphone attached to the headset, ending under the mouth** —
-  free-floating or chin-mounted microphones appeared repeatedly;
+- **matte black headset + microphone attached to it, ending under
+  the mouth** — user-selected color; free-floating or chin-mounted
+  microphones appeared repeatedly;
+- **matte black nameplate with "JeanJack" in gold letters** —
+  user-selected (was a gold plate with gold lettering); the plate
+  keeps the gold detection working;
 - **no readable text except the nameplate** — the model misspells
-  text.
+  text (verify by OCR on the plate zoom).
 
 ## Blocking criteria before accepting a run
 

@@ -165,9 +165,9 @@ The anchor maps the head-to-plate span onto 70% of the frame height;
 - `examples/character/JeanJack/` — `original.png` (identity
   reference), `raw.png`, `crop.png`, `prompt.md`;
 - `examples/scene/lan/` — `raw.png`, `background.png`, `prompt.md`;
-- `examples/avatar/JeanJack.jpg` — 896 px, 392 KB: the < 1 MB bound
-  of this case exceeded the PNG (1.04 MB), so the pipeline fell back
-  to JPEG at the highest fitting quality (100).
+- `examples/avatar/JeanJack.png` — 896 px, 995 KB: the lossless
+  PNG fits this case's < 1 MB bound directly (earlier, glossier
+  renders needed the JPEG fallback).
 - `examples/avatar/prompt.md` — the exact combination recipe.
 
 Reproduce the avatar with the commands above; each prompt file

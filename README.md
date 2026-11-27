@@ -80,7 +80,7 @@ Candidates under selection are numbered: `raw_01.png`, `raw_02.png`,
 
 | raw render | crop | raw scene | background | avatar |
 |---|---|---|---|---|
-| ![Raw render](examples/character/JeanJack/raw.png) | ![Crop](examples/character/JeanJack/crop.png) | ![Sharp scene](examples/scene/lan/raw.png) | ![Prepared background](examples/scene/lan/background.png) | ![Avatar](examples/avatar/JeanJack.jpg) |
+| ![Raw render](examples/character/JeanJack/raw.png) | ![Crop](examples/character/JeanJack/crop.png) | ![Sharp scene](examples/scene/lan/raw.png) | ![Prepared background](examples/scene/lan/background.png) | ![Avatar](examples/avatar/JeanJack.png) |
 
 ### Step by step
 
@@ -96,15 +96,14 @@ python tools/make_avatar.py cutout \
     --src examples/character/JeanJack/raw.png \
     --out examples/character/JeanJack/crop.png
 
-# 3. compose the avatar — anchor on the nameplate (auto-detected,
-#    or measured and passed explicitly if the detection drifts).
+# 3. compose the avatar — anchor auto-detected on the nameplate
+#    (verify it; pass measured fractions if the detection drifts).
 #    The size bound is a per-request constraint (ask the user when
 #    absent — there is no universal default).
 python tools/make_avatar.py compose \
     --bg examples/scene/lan/background.png \
     --character examples/character/JeanJack/crop.png \
-    --out examples/avatar/JeanJack.png \
-    --anchor 0.4916,0.545 --max-kb 976
+    --out examples/avatar/JeanJack.png --max-kb 976
 ```
 
 (The JeanJack case asks for < 1 MB: `--max-kb 976` = 999,424 bytes.)
@@ -146,7 +145,7 @@ assets:
   ambient light, light-colored clothing, chaotic table layout,
   blocking criteria (luminance ≥ 55, no letterbox);
 - [`examples/avatar/prompt.md`](examples/avatar/prompt.md)
-  — the validated combination recipe (blur 4, measured anchor,
+  — the validated combination recipe (blur 4, verified auto anchor,
   `< 1 MB` bound of the JeanJack case).
 
 Agent-facing criteria for both generations, the QA checklist and the
