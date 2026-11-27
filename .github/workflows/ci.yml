@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  avatar-pipeline:
+    name: Avatar pipeline (compose + size bound)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: pip install pillow numpy scipy
+      - name: Syntax check
+        run: python -m compileall engine tools templates
+      - name: Prepare background (square + blur)
+        run: |
+          python tools/make_avatar.py bg \
+            --src examples/scene/lan/raw.png \
+            --out /tmp/bg_LAN_blurry.png --blur 4
+      - name: Detect anchor (auto)
+        run: |
+          python tools/make_avatar.py anchor \
+            --character examples/character/JeanJack/crop.png
+      - name: Compose avatar (JeanJack case — square 896, bound 1 MB)
+        run: |
+          python tools/make_avatar.py compose \
+            --bg /tmp/bg_LAN_blurry.png \
+            --character examples/character/JeanJack/crop.png \
+            --out /tmp/JeanJack.png --anchor 0.4911,0.6134 --max-kb 976
+      - name: Verify square + under 1 MB
+        run: |
+          python - <<'EOF'
+          import os, sys
+          from PIL import Image
+          p = "/tmp/JeanJack.png"
+          if not os.path.exists(p):
+              p = "/tmp/JeanJack.jpg"
+          im = Image.open(p)
+          assert im.size[0] == im.size[1] == 896, f"not a 896px square: {im.size}"
+          size = os.path.getsize(p)
+          assert size <= 1_000_000, f"avatar too big: {size} bytes"
+          print(f"ok: {p} {im.size}, {size} bytes")
+          EOF
+
+  engine-render:
+    name: Engine renders (all data/*.json)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: pip install pillow matplotlib
+      - name: Render every example visual
+        run: |
+          set -e
+          for j in data/*.json; do
+            out="/tmp/$(basename "$j" .json).png"
+            python engine/render.py --data "$j" --out "$out"
+          done

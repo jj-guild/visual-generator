@@ -61,6 +61,38 @@ belong in the JSON data files of the consuming project, never here.
 - Ship a `data/` example and validate its rendering by OCR.
 - Keep assets small: example images ≤ ~300 KB, meaningful names.
 
+## Avatars (character + background pipeline)
+
+Avatars do not go through the JSON/template engine: they are a
+dedicated, element-based pipeline — `engine/avatar.py` (core) and
+`tools/make_avatar.py` (light CLI). Full agent instructions live in
+[`.agents/skills/avatar/SKILL.md`](.agents/skills/avatar/SKILL.md);
+the non-negotiables:
+
+1. **Elements are generated once, never edited.** If a criterion
+   fails (wrong face, missing arm, bad mic), regenerate the raw
+   element. Never retouch a generated render — no inpainting, no
+   clone patch, no pixel surgery. Compositing (crop, scale, position,
+   blur) is the only allowed transformation.
+2. **`examples/character/<Name>/raw.png`** — full body, empty hands,
+   **flat uniform background** (the crop depends on it), thin parts
+   separated from the body (arms, headset interstices), kept at max
+   quality.
+3. **`examples/scene/<name>/raw.png`** — sharp scene, **center
+   uncluttered**, no readable text, no logos, ≥ 1024 px. The prepared
+   background (square crop + blur, `background.png`) must stay
+   readable: a backdrop, not a wash.
+4. **Ask, never assume, the missing constraints**: final aspect and
+   size, avatar file size bound — per-request, no universal default.
+   The avatar lands in `examples/avatar/<Name>.png` (JPEG fallback
+   under the bound, at the highest fitting quality).
+5. **Framing is anchor-driven**: 15% headroom, nameplate anchor at
+   85%, centering on the anchor (never the arms), body cut flush by
+   the bottom edge. All encoded in the CLI defaults.
+6. **The pipeline is fail-closed**: undetected anchor, unreadable
+   art, avatar over the size bound — all abort. Deliver only what
+   passed the QA checklist from the avatar skill.
+
 ## Style
 
 Fail-closed everywhere: unknown template, missing section field,

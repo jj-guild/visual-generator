@@ -52,6 +52,108 @@ optional linked-value box — the civilization / map / player card case.
 
 Texture background, auto-fitted multi-column rules text.
 
+## Avatar generation (`tools/make_avatar.py`)
+
+Square avatars composed from **two generated elements** — a
+character and a background — through a dedicated, element-based
+pipeline (not the JSON/template engine). Each element is generated
+once and never edited: if a criterion fails, the element is
+regenerated; compositing (crop, scale, position, blur) is the only
+allowed transformation.
+
+### File layout (per-character / per-scene)
+
+```
+examples/character/<Name>/original.png   # identity reference, untouched
+examples/character/<Name>/raw.png        # generated render, untouched
+examples/character/<Name>/crop.png       # transparent extraction
+examples/scene/<name>/raw.png            # generated sharp scene, untouched
+examples/scene/<name>/background.png     # raw + square crop + blur
+examples/avatar/<Name>.png|.jpg          # final: crop + background, size-bound
+examples/character/<Name>/prompt.md      # generation prompt + blocking criteria
+examples/scene/<name>/prompt.md          # generation prompt + blocking criteria
+examples/avatar/prompt.md                # combination recipe (JeanJack example)
+```
+
+Candidates under selection are numbered: `raw_01.png`, `raw_02.png`,
+… in the same folder — they are removed once a candidate is chosen.
+
+| raw render | crop | raw scene | background | avatar |
+|---|---|---|---|---|
+| ![Raw render](examples/character/JeanJack/raw.png) | ![Crop](examples/character/JeanJack/crop.png) | ![Sharp scene](examples/scene/lan/raw.png) | ![Prepared background](examples/scene/lan/background.png) | ![Avatar](examples/avatar/JeanJack.png) |
+
+### Step by step
+
+```bash
+# 1. prepare the background: square center-crop + Gaussian blur
+python tools/make_avatar.py bg \
+    --src examples/scene/lan/raw.png \
+    --out examples/scene/lan/background.png --blur 4
+
+# 2. crop out the character (rembg, alpha matting tuned for thin arms
+#    and headset interstices)
+python tools/make_avatar.py cutout \
+    --src examples/character/JeanJack/raw.png \
+    --out examples/character/JeanJack/crop.png
+
+# 3. compose the avatar — anchor on the nameplate (auto-detected;
+#    verify it against a manual plate measurement and pass the
+#    measured fractions when it drifts). The size bound is a
+#    per-request constraint (ask the user when absent — there is
+#    no universal default).
+python tools/make_avatar.py compose \
+    --bg examples/scene/lan/background.png \
+    --character examples/character/JeanJack/crop.png \
+    --out examples/avatar/JeanJack.png \
+    --anchor 0.4911,0.6134 --max-kb 976
+```
+
+(The JeanJack case asks for < 1 MB: `--max-kb 976` = 999,424 bytes.)
+
+The framing is anchor-driven and encoded in the CLI defaults:
+**15%** of the frame free above the head, the nameplate anchor at
+**85%** of the height (≈15% of body visible below it, then cut
+flush by the bottom edge), centering on the anchor — never on the
+arms — and ~25% of background visible left and right. The avatar is
+a square 896 px file. The pipeline saves PNG first and, if the
+bound is exceeded, falls back to JPEG, **binary-searching the
+highest quality that still fits the bound** (approaching the
+requested limit — a 1 MB bound must not produce a 50 KB file)
+before **failing closed** (missing art and undetectable anchors
+abort too).
+
+Programmatic use (bots, drivers) imports the same core:
+
+```python
+from engine import avatar
+avatar.prepare_background("scene/raw.png", "scene/background.png", blur=4)
+avatar.cutout_character("character/raw.png", "character/crop.png")
+avatar.build_avatar("scene/background.png", "character/crop.png",
+                    "avatar/Name.png",
+                    max_bytes=1_000_000)  # per-request bound, ask the user
+```
+
+### Generating the raw elements
+
+The exact prompts that produced the reference assets — with every
+constraint justified, nothing pulled out of thin air — live with the
+assets:
+
+- [`examples/character/JeanJack/prompt.md`](examples/character/JeanJack/prompt.md)
+  — identity rules (no nose, closed-mouth smirk, headset-attached
+  mic, empty hands), flat background, full body;
+- [`examples/scene/lan/prompt.md`](examples/scene/lan/prompt.md)
+  — modern LCD screens (one facing each player), windowless bright
+  ambient light, light-colored clothing, chaotic table layout,
+  blocking criteria (luminance ≥ 55, no letterbox);
+- [`examples/avatar/prompt.md`](examples/avatar/prompt.md)
+  — the validated combination recipe (blur 4, verified auto anchor,
+  `< 1 MB` bound of the JeanJack case).
+
+Agent-facing criteria for both generations, the QA checklist and the
+ask-if-absent constraints (aspect, size bound) live in the
+[avatar skill](.agents/skills/avatar/SKILL.md).
+
 ## Agent skill
 
 This repository ships the canonical agent skill for the library:
