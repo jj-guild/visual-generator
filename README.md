@@ -96,14 +96,16 @@ python tools/make_avatar.py cutout \
     --src examples/character/JeanJack/raw.png \
     --out examples/character/JeanJack/crop.png
 
-# 3. compose the avatar — anchor auto-detected on the nameplate
-#    (verify it; pass measured fractions if the detection drifts).
-#    The size bound is a per-request constraint (ask the user when
-#    absent — there is no universal default).
+# 3. compose the avatar — anchor on the nameplate (auto-detected;
+#    verify it against a manual plate measurement and pass the
+#    measured fractions when it drifts). The size bound is a
+#    per-request constraint (ask the user when absent — there is
+#    no universal default).
 python tools/make_avatar.py compose \
     --bg examples/scene/lan/background.png \
     --character examples/character/JeanJack/crop.png \
-    --out examples/avatar/JeanJack.png --max-kb 976
+    --out examples/avatar/JeanJack.png \
+    --anchor 0.5787,0.6006 --max-kb 976
 ```
 
 (The JeanJack case asks for < 1 MB: `--max-kb 976` = 999,424 bytes.)

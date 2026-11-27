@@ -165,8 +165,8 @@ The anchor maps the head-to-plate span onto 70% of the frame height;
 - `examples/character/JeanJack/` — `original.png` (identity
   reference), `raw.png`, `crop.png`, `prompt.md`;
 - `examples/scene/lan/` — `raw.png`, `background.png`, `prompt.md`;
-- `examples/avatar/JeanJack.png` — 896 px, 995 KB: the lossless
-  PNG fits this case's < 1 MB bound directly (earlier, glossier
+- `examples/avatar/JeanJack.png` — 896 px, 890 KB: the lossless
+  PNG fits this case's < 1 MB bound directly (earlier, busier
   renders needed the JPEG fallback).
 - `examples/avatar/prompt.md` — the exact combination recipe.
 
