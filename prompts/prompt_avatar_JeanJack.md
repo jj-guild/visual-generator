@@ -4,10 +4,12 @@ Combine `raw_bg_LAN.png` et `raw_JeanJack.png` en `avatar_JeanJack.png`
 avec le pipeline du repo (skill `avatar`) :
 
 ```bash
-# 1. fond : crop carré + flou (aucune correction colorimétrique)
+# 1. fond : crop carré + flou + luminosité (post-traitement autorisé
+#    UNIQUEMENT à la demande explicite de l'utilisateur, ex: --brightness 1.3
+#    pour détacher JeanJack, sombre sur fond sombre, du fond LAN)
 python tools/make_avatar.py bg \
     --src examples/assets/scenes/lan/raw_bg_LAN.png \
-    --out examples/assets/scenes/lan/bg_LAN_blurry.png --blur 3
+    --out examples/assets/scenes/lan/bg_LAN_blurry.png --blur 3 --brightness 1.3
 
 # 2. cutout : personnage transparent (rembg, matting doux —
 #    préserve les bras fins et les interstices du casque)
