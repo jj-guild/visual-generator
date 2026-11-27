@@ -44,8 +44,13 @@ generation)
   readability;
 - **flat uniform background** — the crop step depends on it;
 - **full body visible** — the pipeline crops, the render must not;
-- **empty hands, nothing on the back** — held items (the baguette)
-  failed every generation attempt; the user dropped them;
+- **empty hands, nothing on the back, NO baguette** — held items
+  (the baguette) failed every generation attempt; the user dropped
+  them. LESSON: when the edit base is the original artwork (which
+  shows a baguette), the model copies it back even with a removal
+  instruction — always edit from a baguette-free render AND state
+  explicitly that we diverge from the original artwork (no
+  baguette, nothing held, nothing on the back);
 - **no nose** — explicitly rejected by the user;
 - **small closed-mouth smirk** — every larger smile rendered creepy;
 - **matte black headset + microphone attached to it, ending under
