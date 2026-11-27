@@ -14,30 +14,34 @@ shape, same gold nameplate), not a crop of the reference.
 ## Prompt used (edit of the user's reference, not of a prior
 generation)
 
-> Regenerate this exact same robot character as if freshly
-> polished. Keep the identity identical: same proportions and
-> rounded head shape, glowing round bright eyes, same small subtle
-> closed-mouth smirk (no teeth, no nose), same nameplate position on
-> the chest, slim three-finger robot hands. Changes: remove the
-> baguette and everything held in his hands (empty hands held
-> slightly away from the body); the body is polished glossy BLACK
-> metal, mirror-like with bright specular highlights, no brown
-> tint, catching the light across the whole figure; uniform bright
-> soft studio lighting, no dark areas; the gaming headset is matte
-> black with an attached matte-black microphone reaching under the
-> mouth; the nameplate on the chest is matte black with the name
-> "JeanJack" engraved in shiny gold letters; full body visible
-> head to feet, standing on a completely flat uniform light-gray
-> background. Sharp focus, high detail, no other objects, no
-> readable text other than the nameplate.
+> Regenerate this exact same robot character with a bright,
+> high-contrast look. Keep the identity identical: same proportions
+> and rounded head shape, glowing round bright eyes, same small
+> subtle closed-mouth smirk (no teeth, no nose), same nameplate
+> position on the chest, slim three-finger robot hands. Changes:
+> remove the baguette and everything held in his hands (empty hands
+> held slightly away from the body); the body is LIGHT
+> charcoal-grey glossy metal — clearly bright, silvery-graphite,
+> luminous from every angle, NOT deep black, NOT dark, and NO
+> mirror spot highlights or specular hotspots on it — just a smooth
+> even light-grey sheen; the whole figure is evenly filled with
+> soft bright ambient light like an overcast studio, no shadows, no
+> dark areas, maximum readability at small sizes; the gaming
+> headset is matte black with an attached matte-black microphone
+> reaching under the mouth; the nameplate on the chest is matte
+> black with the name "JeanJack" engraved in shiny gold letters;
+> full body visible head to feet, standing on a completely flat
+> uniform white background. Sharp focus, high detail, no other
+> objects, no readable text other than the nameplate.
 
 ## Why each constraint (session-validated)
 
-- **polished glossy black, uniform lighting** — the user iterated:
-  dark matte brown -> bright glossy brown ("too dark") -> satin
-  brown ("less bright than v2") -> polished black, lighter and
-  shinier, no brown tint ("he just changed clothes and took a
-  shower");
+- **light charcoal-grey, ambient light, no spot highlights** —
+  iteration history: dark matte brown ("too dark") -> bright
+  glossy brown -> satin brown -> mirror black ("unreadable, this
+  avatar renders at 64x64 most of the time") -> light
+  silvery-graphite with even ambient sheen, sized for 64x64
+  readability;
 - **flat uniform background** — the crop step depends on it;
 - **full body visible** — the pipeline crops, the render must not;
 - **empty hands, nothing on the back** — held items (the baguette)

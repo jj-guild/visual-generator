@@ -105,7 +105,7 @@ python tools/make_avatar.py compose \
     --bg examples/scene/lan/background.png \
     --character examples/character/JeanJack/crop.png \
     --out examples/avatar/JeanJack.png \
-    --anchor 0.5787,0.6006 --max-kb 976
+    --anchor 0.4911,0.6134 --max-kb 976
 ```
 
 (The JeanJack case asks for < 1 MB: `--max-kb 976` = 999,424 bytes.)

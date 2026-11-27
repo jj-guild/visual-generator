@@ -32,7 +32,7 @@ jobs:
           python tools/make_avatar.py compose \
             --bg /tmp/bg_LAN_blurry.png \
             --character examples/character/JeanJack/crop.png \
-            --out /tmp/JeanJack.png --anchor 0.5787,0.6006 --max-kb 976
+            --out /tmp/JeanJack.png --anchor 0.4911,0.6134 --max-kb 976
       - name: Verify square + under 1 MB
         run: |
           python - <<'EOF'
