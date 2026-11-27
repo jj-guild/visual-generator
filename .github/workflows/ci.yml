@@ -22,7 +22,7 @@ jobs:
         run: |
           python tools/make_avatar.py bg \
             --src examples/assets/scenes/lan/raw_bg_LAN.png \
-            --out /tmp/bg_LAN_blurry.png --blur 5
+            --out /tmp/bg_LAN_blurry.png --blur 4
       - name: Detect anchor (auto)
         run: |
           python tools/make_avatar.py anchor \
@@ -32,7 +32,7 @@ jobs:
           python tools/make_avatar.py compose \
             --bg /tmp/bg_LAN_blurry.png \
             --character examples/assets/personnages/jeanjack/cutout_JeanJack.png \
-            --out /tmp/avatar_JeanJack.png
+            --out /tmp/avatar_JeanJack.png --dx 20
       - name: Verify square + under 1 MB
         run: |
           python - <<'EOF'

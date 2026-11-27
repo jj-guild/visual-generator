@@ -76,6 +76,11 @@ Hard criteria:
 
 - **center uncluttered** — the avatar character lands dead center;
 - **no readable text, no logos** (the model misspells text);
+- **bright even ambient light, no visible light source** (no
+  windows, no lamps in frame) — a dark scene sinks a dark
+  character; ask the user before any `--brightness` correction;
+- for crowd scenes: light-colored clothing, modern props, action
+  everywhere (the blur keeps only silhouettes and glow);
 - resolution ≥ 1024 px on the short side;
 - the *scene must stay readable after the blur*: it is a backdrop,
   not a wash.
@@ -85,7 +90,7 @@ Hard criteria:
 ```bash
 # 1. background: square center-crop + Gaussian blur (never color-correct
 #    the scene beyond the explicit --brightness the user asked for)
-python tools/make_avatar.py bg --src raw_bg_LAN_blurry.png --out bg_LAN_blurry.png --blur 5
+python tools/make_avatar.py bg --src raw_bg_LAN.png --out bg_LAN_blurry.png --blur 4
 
 # 2. cutout: transparent character (rembg, alpha matting tuned for
 #    thin arms and headset interstices)
@@ -103,7 +108,7 @@ Agents doing programmatic work import the same core:
 
 ```python
 from engine import avatar
-avatar.prepare_background("raw_bg_LAN_blurry.png", "bg_LAN_blurry.png", blur=5)
+avatar.prepare_background("raw_bg_LAN.png", "bg_LAN_blurry.png", blur=4)
 avatar.cutout_character("raw_user.png", "cutout_user.png")
 anchor = avatar.detect_anchor("cutout_user.png")   # (cx, bottom) fractions
 avatar.build_avatar("bg_LAN_blurry.png", "cutout_user.png", "avatar_user.png",

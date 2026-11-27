@@ -4,12 +4,12 @@ Combine `raw_bg_LAN.png` et `raw_JeanJack.png` en `avatar_JeanJack.png`
 avec le pipeline du repo (skill `avatar`) :
 
 ```bash
-# 1. fond : crop carré + flou + luminosité (post-traitement autorisé
-#    UNIQUEMENT à la demande explicite de l'utilisateur, ex: --brightness 1.3
-#    pour détacher JeanJack, sombre sur fond sombre, du fond LAN)
+# 1. fond : crop carré + flou (la scène validée est naturellement
+#    lumineuse : aucune correction de luminosité nécessaire ;
+#    --brightness n'est autorisé QUE sur demande explicite utilisateur)
 python tools/make_avatar.py bg \
     --src examples/assets/scenes/lan/raw_bg_LAN.png \
-    --out examples/assets/scenes/lan/bg_LAN_blurry.png --blur 3 --brightness 1.3
+    --out examples/assets/scenes/lan/bg_LAN_blurry.png --blur 4
 
 # 2. cutout : personnage transparent (rembg, matting doux —
 #    préserve les bras fins et les interstices du casque)
@@ -18,31 +18,26 @@ python tools/make_avatar.py cutout \
     --out examples/assets/personnages/jeanjack/cutout_JeanJack.png
 
 # 3. avatar : composition pilotée par l'ancre (auto-détection sur la
-#    plaque dorée), taille bornée, fail-closed
+#    plaque dorée), taille bornée, fail-closed.
+#    --dx 20 : le personnage est posé de biais, l'ancre décalée à
+#    droite du nez impose un léger décalage vers la droite pour un
+#    centrage visuel correct.
 python tools/make_avatar.py compose \
     --bg examples/assets/scenes/lan/bg_LAN_blurry.png \
     --character examples/assets/personnages/jeanjack/cutout_JeanJack.png \
     --out examples/avatars/avatar_JeanJack.png --dx 20
 ```
 
-## Règles de cadrage (défauts du CLI = règles de session)
+## Paramètres retenus (validation utilisateur)
 
-| Règle | Valeur |
-|---|---|
-| Espace libre au-dessus du casque | 15% (`--headroom 0.15`) |
-| Bas de la plaque "JeanJack" | 85% de la hauteur (`--plate-bottom 0.85`) |
-| Centrage | sur la plaque (l'ancre), jamais sur les bras |
-| Bord bas | corps coupé net, aucun écart de pixels |
-| Canvas | carré 896 px (`--size 896`) |
-| Nudge horizontal | `--dx` px (pose en biais : +20 ici, à ajuster à l'œil) |
-| Flou du fond | `--blur 3` (5 masque la scène) |
-| Taille fichier | PNG < 1 Mo (`--max-kb 1024`, fail-closed) |
+| Paramètre | Valeur | Raison |
+|---|---|---|
+| `--blur` | 4 | le fond reste lisible comme LAN mais détache le personnage ; en dessous, l'avatar dépasse 1 Mo en RGB |
+| `--dx` | 20 | centrage visuel du personnage posé de biais |
+| `--brightness` | (aucun) | la scène validée est lumineuse nativement (lum ~72 après flou) |
 
-## Doctrine
-
-- Chaque élément est généré une fois, jamais édité ni retouché.
-- Seules transformations permises : crop, scale, position, flou.
-- Si un critère échoue (cutout raté, ancre perdue, taille dépassée) :
-  régénérer l'élément, ne jamais corriger au pixel.
-- Utiliser uniquement `raw_JeanJack.png` comme personnage de référence
-  (render validé, image d'origine comme source d'identité).
+L'avatar final reste en RGB pleine qualité : aucune quantification
+palette n'est nécessaire tant que le PNG tient sous 1 Mo. C'est le
+cas avec blur 4 (≈ 1,04 Mo) ; si un futur fond plus détaillé dépasse
+la limite, préférer augmenter le flou d'un cran avant de laisser le
+pipeline quantifier (fail-closed dégradé).

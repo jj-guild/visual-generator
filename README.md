@@ -84,7 +84,7 @@ Candidates under selection are numbered: `raw_JeanJack_01.png`,
 # 1. prepare the background: square center-crop + Gaussian blur
 python tools/make_avatar.py bg \
     --src examples/assets/scenes/lan/raw_bg_LAN.png \
-    --out examples/assets/scenes/lan/bg_LAN_blurry.png --blur 5
+    --out examples/assets/scenes/lan/bg_LAN_blurry.png --blur 4
 
 # 2. cut out the character (rembg, alpha matting tuned for thin arms
 #    and headset interstices)
@@ -96,7 +96,7 @@ python tools/make_avatar.py cutout \
 python tools/make_avatar.py compose \
     --bg examples/assets/scenes/lan/bg_LAN_blurry.png \
     --character examples/assets/personnages/jeanjack/cutout_JeanJack.png \
-    --out examples/avatars/avatar_JeanJack.png
+    --out examples/avatars/avatar_JeanJack.png --dx 20
 ```
 
 The framing is anchor-driven and encoded in the CLI defaults:
@@ -112,7 +112,7 @@ Programmatic use (bots, drivers) imports the same core:
 
 ```python
 from engine import avatar
-avatar.prepare_background("raw_bg_LAN.png", "bg_LAN_blurry.png", blur=5)
+avatar.prepare_background("raw_bg_LAN.png", "bg_LAN_blurry.png", blur=4)
 avatar.cutout_character("raw_user.png", "cutout_user.png")
 avatar.build_avatar("bg_LAN_blurry.png", "cutout_user.png", "avatar_user.png")
 ```
