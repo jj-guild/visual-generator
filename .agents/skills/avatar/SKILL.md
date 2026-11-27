@@ -28,7 +28,7 @@ allowed transformation.
 | `raw_bg_<name>.png` | generated sharp scene, untouched |
 | `cutout_<name>.png` | transparent character extraction |
 | `bg_<name>_blurry.png` | prepared background: square crop + blur |
-| `avatar_<name>.png` | final: assembled, cropped, size-bound — profile-picture ready |
+| `avatar_<name>.png` / `.jpg` | final: assembled, cropped, size-bound — profile-picture ready |
 
 Candidates under selection are numbered: `raw_<name>_01.png`, …
 
@@ -37,7 +37,9 @@ Candidates under selection are numbered: `raw_<name>_01.png`, …
 If the user does not specify, **ask** (never assume):
 
 - the final **aspect and size** (default proposal: square, 896 px);
-- the **size bound** of the avatar file (default proposal: < 1 MB PNG);
+- the **size bound** of the avatar file — per-case constraint, there
+  is NO universal default (proposal: < 1 MB); pass it with
+  `--max-kb`; JPEG fallback compresses to fit before failing;
 - whether the background is a generated scene or a user image.
 
 Only the final avatar is size-bound. Raw assets are kept at maximum
@@ -112,6 +114,7 @@ avatar.prepare_background("raw_bg_LAN.png", "bg_LAN_blurry.png", blur=4)
 avatar.cutout_character("raw_user.png", "cutout_user.png")
 anchor = avatar.detect_anchor("cutout_user.png")   # (cx, bottom) fractions
 avatar.build_avatar("bg_LAN_blurry.png", "cutout_user.png", "avatar_user.png",
+                    max_bytes=1_000_000,  # per-case bound, ask the user
                     anchor=anchor)
 ```
 
@@ -124,7 +127,7 @@ avatar.build_avatar("bg_LAN_blurry.png", "cutout_user.png", "avatar_user.png",
 | anchor | auto | detected on the gold nameplate; centering follows it, **never the arms** |
 | bottom edge | by construction | the body is cut flush, zero background gap |
 | `--size` | 896 | square canvas |
-| `--max-kb` | 1024 | avatar PNG size bound (fail-closed) |
+| `--max-kb` | none | size bound in KiB — per-case, ask the user; PNG first, JPEG fallback under the bound (fail-closed) |
 
 The anchor maps the head-to-plate span onto 70% of the frame height;
 ~15% of body stays visible below the plate, then the frame cuts it.
@@ -138,8 +141,10 @@ The anchor maps the head-to-plate span onto 70% of the frame height;
 3. **Avatar**: character top ≈ `headroom`, anchor at
    `plate_bottom`, alpha content down to the last canvas row (no
    bottom gap), background visible left and right.
-4. **Size**: `avatar_*.png` under the bound — the pipeline refuses
-   to deliver otherwise.
+4. **Size**: under the bound when one was requested — the pipeline
+   refuses to deliver otherwise. PNG first; if the PNG exceeds the
+   bound, the pipeline falls back to JPEG (quality ladder 92→70)
+   which keeps gradients clean, unlike palette quantization.
 5. Visual check of the face at full resolution: identity criteria
    (eyes, mouth, no unwanted features). If a criterion fails:
    **regenerate the raw element, never retouch it**.
@@ -149,6 +154,7 @@ The anchor maps the head-to-plate span onto 70% of the frame height;
 `examples/assets/jeanjack/` holds the full reference set:
 `raw_JeanJack.png` (raw render), `cutout_JeanJack.png` (cutout),
 `raw_bg_LAN_blurry.png` (sharp scene), `bg_LAN_blurry.png` (prepared background),
-`avatar_JeanJack.png` (896 px, < 1 MB). Reproduce the avatar with the
+`avatar_JeanJack.jpg` (896 px, 143 KB — the < 1 MB bound of this case
+forced the JPEG fallback, quality 92). Reproduce the avatar with the
 commands above; the README section "Avatar generation" documents the
 prompts used for both raw assets.

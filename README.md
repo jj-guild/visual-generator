@@ -69,14 +69,14 @@ allowed transformation.
 | `raw_bg_<name>.png` | generated, untouched | sharp background scene |
 | `cutout_<name>.png` | extracted | transparent character (interstices kept) |
 | `bg_<name>_blurry.png` | prepared background | square crop + blur |
-| `avatar_<name>.png` | **final** | assembled, cropped, size-bound — profile-picture ready |
+| `avatar_<name>.png` / `.jpg` | **final** | assembled, cropped, size-bound — profile-picture ready |
 
 Candidates under selection are numbered: `raw_JeanJack_01.png`,
 `raw_bg_LAN_01.png`, …
 
 | raw render | cutout | raw scene | blurry background | avatar |
 |---|---|---|---|---|
-| ![Raw render](examples/assets/personnages/jeanjack/raw_JeanJack.png) | ![Cutout](examples/assets/personnages/jeanjack/cutout_JeanJack.png) | ![Sharp scene](examples/assets/scenes/lan/raw_bg_LAN.png) | ![Prepared background](examples/assets/scenes/lan/bg_LAN_blurry.png) | ![Avatar](examples/avatars/avatar_JeanJack.png) |
+| ![Raw render](examples/assets/personnages/jeanjack/raw_JeanJack.png) | ![Cutout](examples/assets/personnages/jeanjack/cutout_JeanJack.png) | ![Sharp scene](examples/assets/scenes/lan/raw_bg_LAN.png) | ![Prepared background](examples/assets/scenes/lan/bg_LAN_blurry.png) | ![Avatar](examples/avatars/avatar_JeanJack.jpg) |
 
 ### Step by step
 
@@ -96,17 +96,21 @@ python tools/make_avatar.py cutout \
 python tools/make_avatar.py compose \
     --bg examples/assets/scenes/lan/bg_LAN_blurry.png \
     --character examples/assets/personnages/jeanjack/cutout_JeanJack.png \
-    --out examples/avatars/avatar_JeanJack.png --dx 20
+    --out examples/avatars/avatar_JeanJack.png --dx 20 --max-kb 976
 ```
+
+(The JeanJack case asks for < 1 MB: `--max-kb 976` = 999,424 bytes.)
 
 The framing is anchor-driven and encoded in the CLI defaults:
 **15%** of the frame free above the head, the nameplate anchor at
 **85%** of the height (≈15% of body visible below it, then cut
 flush by the bottom edge), centering on the anchor — never on the
 arms — and ~25% of background visible left and right. The avatar is
-a square 896 px PNG under 1 MB; the pipeline **fails closed** if the
-size bound cannot be met (missing art and undetectable anchors abort
-too).
+a square 896 px file. The **size bound is a per-request constraint
+(ask the user when absent — there is no universal default)**; pass it
+with `--max-kb`. The pipeline saves PNG first and, if the bound is
+exceeded, falls back to JPEG (quality ladder 92→70) before **failing
+closed** (missing art and undetectable anchors abort too).
 
 Programmatic use (bots, drivers) imports the same core:
 
@@ -114,7 +118,8 @@ Programmatic use (bots, drivers) imports the same core:
 from engine import avatar
 avatar.prepare_background("raw_bg_LAN.png", "bg_LAN_blurry.png", blur=4)
 avatar.cutout_character("raw_user.png", "cutout_user.png")
-avatar.build_avatar("bg_LAN_blurry.png", "cutout_user.png", "avatar_user.png")
+avatar.build_avatar("bg_LAN_blurry.png", "cutout_user.png", "avatar_user.png",
+                    max_bytes=1_000_000)  # per-case bound, ask the user
 ```
 
 ### Generating the raw elements

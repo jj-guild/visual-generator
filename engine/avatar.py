@@ -31,7 +31,6 @@ DEFAULT_SIZE = 896
 DEFAULT_HEADROOM = 0.15
 DEFAULT_PLATE_BOTTOM = 0.85
 DEFAULT_BLUR = 5.0
-DEFAULT_MAX_BYTES = 1024 * 1024
 
 
 def _require_file(path: str, what: str) -> None:
@@ -143,10 +142,12 @@ def build_avatar(bg: str, character: str, out: str, size: int = DEFAULT_SIZE,
                  plate_bottom: float = DEFAULT_PLATE_BOTTOM,
                  anchor: tuple[float, float] | None = None,
                  dx: int = 0, dy: int = 0,
-                 max_bytes: int = DEFAULT_MAX_BYTES) -> str:
+                 max_bytes: int | None = None) -> str:
     """Compose the avatar: bg -> character, anchor-driven, cut flush.
 
-    The vertical span head-top -> anchor bottom is mapped onto
+    ``max_bytes`` is a per-request constraint (a size bound is NOT
+    universal: ask the user for the target when absent). ``None`` means
+    no bound. The vertical span head-top -> anchor bottom is mapped onto
     ``plate_bottom - headroom`` of the canvas; the character top sits
     at ``headroom``; horizontal centering follows the anchor. The
     character's full scaled height extends past the canvas bottom by
@@ -179,12 +180,27 @@ def build_avatar(bg: str, character: str, out: str, size: int = DEFAULT_SIZE,
     canvas.alpha_composite(ch_s, (px, py))
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     canvas.save(out, optimize=True)
-    if os.path.getsize(out) > max_bytes:
-        # palette quantization (RGBA-safe) before giving up
-        quant = canvas.quantize(colors=256, method=Image.FASTOCTREE)
-        quant.save(out, optimize=True)
+    if max_bytes and os.path.getsize(out) > max_bytes:
+        # JPEG fallback for opaque avatars: unlike palette quantization
+        # it does not posterize gradients. Try decreasing qualities,
+        # fail closed below the quality floor.
+        jpeg_out = os.path.splitext(out)[0] + ".jpg"
+        rgb = canvas.convert("RGB")
+        saved = None
+        for quality in (92, 88, 84, 80, 76, 70):
+            rgb.save(jpeg_out, format="JPEG", quality=quality,
+                     optimize=True, progressive=True)
+            if os.path.getsize(jpeg_out) <= max_bytes:
+                saved = jpeg_out
+                break
+        if saved is None:
+            sys.exit(f"avatar: cannot fit under {max_bytes} bytes "
+                     f"(JPEG quality 70 minimum); reduce --size "
+                     "or simplify the art")
+        os.remove(out)
+        return saved
     actual = os.path.getsize(out)
-    if actual > max_bytes:
+    if max_bytes and actual > max_bytes:
         sys.exit(f"avatar: {out} is {actual} bytes (> {max_bytes}); "
                  "reduce --size or simplify the art")
     return out

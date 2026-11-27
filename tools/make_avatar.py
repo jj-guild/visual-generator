@@ -59,11 +59,11 @@ def cmd_compose(args: argparse.Namespace) -> None:
         except ValueError:
             sys.exit("avatar: --anchor expects 'cx_fraction,bottom_fraction'")
         anchor = (cx, bottom)
-    avatar.build_avatar(args.bg, args.character, args.out, size=args.size,
-                        headroom=args.headroom, plate_bottom=args.plate_bottom,
-                        anchor=anchor, dx=args.dx, dy=args.dy,
-                        max_bytes=args.max_kb * 1024)
-    print("ok", args.out)
+    out = avatar.build_avatar(args.bg, args.character, args.out, size=args.size,
+                              headroom=args.headroom, plate_bottom=args.plate_bottom,
+                              anchor=anchor, dx=args.dx, dy=args.dy,
+                              max_bytes=(args.max_kb * 1024 if args.max_kb else None))
+    print("ok", out)
 
 
 def main() -> None:
@@ -104,8 +104,9 @@ def main() -> None:
                    help="'auto' (nameplate detection) or 'cx_fraction,bottom_fraction'")
     m.add_argument("--dx", type=int, default=0, help="nudge character right by N pixels (negative: left)")
     m.add_argument("--dy", type=int, default=0, help="nudge character down by N pixels (negative: up)")
-    m.add_argument("--max-kb", type=int, default=avatar.DEFAULT_MAX_BYTES // 1024,
-                   help="avatar size bound in KB (default 1024)")
+    m.add_argument("--max-kb", type=int, default=None,
+                   help="size bound in KiB — per-case constraint, ask the user "
+                        "when absent (omit for no bound)")
     m.set_defaults(func=cmd_compose)
 
     args = p.parse_args()

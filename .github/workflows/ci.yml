@@ -27,23 +27,25 @@ jobs:
         run: |
           python tools/make_avatar.py anchor \
             --character examples/assets/personnages/jeanjack/cutout_JeanJack.png
-      - name: Compose avatar
+      - name: Compose avatar (JeanJack case: square 896, bound 1 MB)
         run: |
           python tools/make_avatar.py compose \
             --bg /tmp/bg_LAN_blurry.png \
             --character examples/assets/personnages/jeanjack/cutout_JeanJack.png \
-            --out /tmp/avatar_JeanJack.png --dx 20
+            --out /tmp/avatar_JeanJack.png --dx 20 --max-kb 976
       - name: Verify square + under 1 MB
         run: |
           python - <<'EOF'
           import os, sys
           from PIL import Image
           p = "/tmp/avatar_JeanJack.png"
+          if not os.path.exists(p):
+              p = "/tmp/avatar_JeanJack.jpg"
           im = Image.open(p)
           assert im.size[0] == im.size[1] == 896, f"not a 896px square: {im.size}"
           size = os.path.getsize(p)
-          assert size <= 1024 * 1024, f"avatar too big: {size} bytes"
-          print(f"ok: {im.size}, {size} bytes")
+          assert size <= 1_000_000, f"avatar too big: {size} bytes"
+          print(f"ok: {p} {im.size}, {size} bytes")
           EOF
 
   engine-render:

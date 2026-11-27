@@ -18,14 +18,18 @@ python tools/make_avatar.py cutout \
     --out examples/assets/personnages/jeanjack/cutout_JeanJack.png
 
 # 3. avatar : composition pilotée par l'ancre (auto-détection sur la
-#    plaque dorée), taille bornée, fail-closed.
+#    plaque dorée), fail-closed.
 #    --dx 20 : le personnage est posé de biais, l'ancre décalée à
 #    droite du nez impose un léger décalage vers la droite pour un
 #    centrage visuel correct.
+#    --max-kb 976 : contrainte de CE cas-ci (< 1 Mo, soit 999 424
+#    octets) — la borne n'est pas universelle, elle se demande au
+#    cas par cas. PNG d'abord ; si le PNG dépasse, repli JPEG
+#    (qualité 92→70) sans postérisation.
 python tools/make_avatar.py compose \
     --bg examples/assets/scenes/lan/bg_LAN_blurry.png \
     --character examples/assets/personnages/jeanjack/cutout_JeanJack.png \
-    --out examples/avatars/avatar_JeanJack.png --dx 20
+    --out examples/avatars/avatar_JeanJack.png --dx 20 --max-kb 976
 ```
 
 ## Paramètres retenus (validation utilisateur)
@@ -35,9 +39,8 @@ python tools/make_avatar.py compose \
 | `--blur` | 4 | le fond reste lisible comme LAN mais détache le personnage ; en dessous, l'avatar dépasse 1 Mo en RGB |
 | `--dx` | 20 | centrage visuel du personnage posé de biais |
 | `--brightness` | (aucun) | la scène validée est lumineuse nativement (lum ~72 après flou) |
+| `--max-kb` | 976 | borne < 1 Mo de ce cas (contrainte par cas, pas un défaut) |
 
-L'avatar final reste en RGB pleine qualité : aucune quantification
-palette n'est nécessaire tant que le PNG tient sous 1 Mo. C'est le
-cas avec blur 4 (≈ 1,04 Mo) ; si un futur fond plus détaillé dépasse
-la limite, préférer augmenter le flou d'un cran avant de laisser le
-pipeline quantifier (fail-closed dégradé).
+Avec blur 4 le PNG RGB fait ≈ 1,04 Mo : il dépasse la borne, le
+pipeline produit donc un JPEG qualité 92 (≈ 140 Ko) — gradients
+propres, aucun artifact visible, JeanJack intact.
