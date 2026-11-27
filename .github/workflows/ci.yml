@@ -27,7 +27,7 @@ jobs:
         run: |
           python tools/make_avatar.py anchor \
             --character examples/assets/personnages/jeanjack/cutout_JeanJack.png
-      - name: Compose avatar (JeanJack case: square 896, bound 1 MB)
+      - name: Compose avatar (JeanJack case — square 896, bound 1 MB)
         run: |
           python tools/make_avatar.py compose \
             --bg /tmp/bg_LAN_blurry.png \
